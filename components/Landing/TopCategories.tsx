@@ -7,7 +7,7 @@ export default function TopCategories() {
   const icons = [
     { icon: <IoShirtOutline />, label: "Shirt" },
     { icon: <GiTrousers />, label: "Trousers" },
-    { icon: <GiHoodie />, label: "Settings" },
+    { icon: <GiHoodie />, label: "Hoodies" },
     { icon: <PiBaseballCap />, label: "Caps" },
   ];
 

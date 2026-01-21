@@ -1,4 +1,5 @@
 import NavBar from "@/components/Landing/NavBar";
+import React from "react";
 
 export default function LandingPageLayout({
   children,
