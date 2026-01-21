@@ -19,7 +19,8 @@
     "react-dom": "19.2.3",
     "react-icons": "^5.5.0",
     "react-phone-number-input": "^3.4.14",
-    "three": "^0.182.0"
+    "three": "^0.182.0",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

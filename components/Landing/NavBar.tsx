@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
+import Link from "next/link";
 
 const NavBar = () => {
   const navLinks = [
@@ -14,7 +15,7 @@ const NavBar = () => {
 
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
-  const [activeID, setActiveID] = useState('Home')
+  const [activeID, setActiveID] = useState("Home");
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0;
@@ -26,16 +27,16 @@ const NavBar = () => {
     }
   });
 
-  useEffect(()=> {
-    setActiveID('Home')
-    document.getElementById('home')?.scrollIntoView({
+  useEffect(() => {
+    setActiveID("Home");
+    document.getElementById("home")?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
-  }, [setActiveID])
+  }, [setActiveID]);
 
   const handleScroll = (id: string, label: string) => {
-    setActiveID(label)
+    setActiveID(label);
     document.getElementById(id)?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -61,14 +62,13 @@ const NavBar = () => {
           />
         </div>
 
-        {/* Links */}
         <div className="hidden md:flex items-center gap-10">
           {navLinks.map((nav) => (
             <button
               key={nav.id}
               onClick={() => handleScroll(nav.id, nav.label)}
               className={`relative font-medium hover:text-[#B10E0E]
-              after:absolute cursor-pointer ${activeID === nav.label ? 'text-[#B10E0E]' : 'text-[#B10E0E]/50'} transition-all
+              after:absolute cursor-pointer ${activeID === nav.label ? "text-[#B10E0E]" : "text-[#B10E0E]/50"} transition-all
               hover:after:w-full`}
             >
               {nav.label}
@@ -82,13 +82,14 @@ const NavBar = () => {
             Sign In
           </button>
 
-          <button
+          <Link
+            href="/shop"
             className="px-6 py-2 cursor-pointer rounded-full font-semibold text-white
             bg-linear-to-r from-[#B10E0E] to-[#8E0B0B]
             hover:scale-[1.03] hover:shadow-lg transition-all"
           >
             Shop Now
-          </button>
+          </Link>
         </div>
       </div>
     </motion.nav>
