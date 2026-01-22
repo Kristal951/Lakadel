@@ -29,7 +29,7 @@ export default function ProductCard({
           <div className="absolute p-4 inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between">
             <div className="w-full h-max flex justify-end">
               <button className="p-1 rounded-full cursor-pointer hover:bg-[#f9fafb]/30">
-                <CiHeart className="w-10 h-10" />
+                <CiHeart className="w-10 h-10 text-white" />
               </button>
             </div>
             <div className="w-full flex justify-between items-center">
@@ -46,10 +46,10 @@ export default function ProductCard({
         </div>
 
         <div className="flex flex-col gap-1">
-          <h3 className="text-base text-[#B10E0E] font-semibold tracking-wide">
+          <h3 style={{color: 'var(--foreground)'}} className="text-base text-[#B10E0E] dark:text-white font-semibold tracking-wide">
             {label}
           </h3>
-          <p className="text-base text-[#B10E0E]/80">
+          <p style={{color: 'var(--foreground)'}} className="text-base dark:text-white text-[#B10E0E]/80">
             ${price.toLocaleString()}
           </p>
         </div>

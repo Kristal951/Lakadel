@@ -1,11 +1,24 @@
+"use client";
 import Image from "next/image";
-import React from "react";
+import { useRouter } from "next/navigation";
+import React, { useState, useRef, useEffect } from "react";
 import { CgProfile } from "react-icons/cg";
 import { IoBagOutline, IoSearchOutline } from "react-icons/io5";
 
 const Header = () => {
+  const router = useRouter();
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const goToBag = () => router.push("/shopping-bag");
+
   return (
-    <div className="fixed top-0 z-100 left-0 right-0 h-17.5 bg-white flex items-center justify-between px-6 ">
+    <div
+      className="fixed top-0 left-0 right-0 h-18 flex items-center justify-between px-6 z-50"
+      style={{
+        background: "var(--background)",
+        color: "var(--foreground)",
+      }}
+    >
       <div className="relative h-11 w-35">
         <Image
           src="/Lakadel2.png"
@@ -16,15 +29,51 @@ const Header = () => {
         />
       </div>
 
-      <div className="w-max h-max px-10 items-center gap-2 flex">
-        <button className="p-1 hover:bg-gray-100 rounded cursor-pointer">
-          <IoSearchOutline className="text-black w-6 h-6"/>
+      <div className="flex items-center gap-4">
+        <div ref={searchRef} className="relative flex items-center">
+ 
+    <input
+      type="text"
+      placeholder="Search products..."
+      className="
+        absolute right-0 top-1/2 transform -translate-y-1/2
+        w-64 md:w-80 px-4 py-2
+        border border-foreground/30 placeholder:text-foreground/50 bg-white
+        rounded-full 
+        focus:outline-none focus:ring-2 focus:ring-(--accent,#B10E0E)
+        transition-all duration-300
+        z-50
+      "
+    />
+
+  <button
+    className="
+      p-2 rounded-full
+      hover:bg-gray-200/50
+      active:scale-95
+      transition transform
+      z-50
+    "
+  >
+    <IoSearchOutline className="w-6 h-6 text-foreground" />
+  </button>
+</div>
+
+
+        {/* Bag */}
+        <button
+          onClick={goToBag}
+          className="p-2 rounded-full hover:bg-gray-200 transition"
+        >
+          <IoBagOutline className="w-6 h-6" />
         </button>
-        <button className="p-1 hover:bg-gray-100 rounded cursor-pointer">
-          <IoBagOutline className="text-black w-6 h-6"/>
-        </button>
-        <button className="p-1 hover:bg-gray-100 rounded cursor-pointer">
-          <CgProfile className="text-black w-6 h-6"/>
+
+        {/* Profile */}
+        <button
+          onClick={() => console.log("profile")}
+          className="p-2 rounded-full hover:bg-gray-200 transition"
+        >
+          <CgProfile className="w-6 h-6" />
         </button>
       </div>
     </div>

@@ -10,11 +10,9 @@ export default function ShopLayout({
 }) {
   return (
     <div className="w-full flex flex-col min-h-screen">
-      <Header />
-      <TopBar />
       <div className="flex w-full flex-1">
         <SidebarFilters />
-        <main className="flex-1 ml-[20%] mt-30 p-4 bg-white">{children}</main>
+        <main className="flex-1 ml-[20%] mt-30 p-4 ">{children}</main>
       </div>
     </div>
   );
