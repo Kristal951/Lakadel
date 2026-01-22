@@ -6,20 +6,29 @@ export default function BreadCrumbs() {
   const segments = pathname.split("/").filter(Boolean);
 
   return (
-    <div className="flex items-center space-x-2 text-gray-600 text-sm">
-      <span className="text-[#B10E0E]/50 cursor-pointer">Home</span>
+    <div className="flex items-center space-x-2 text-sm">
+      <span
+        className="cursor-pointer"
+        style={{ color: "var(--foreground)", opacity: 0.5 }}
+      >
+        Home
+      </span>
+
       {segments.map((segment, idx) => {
         const isLast = idx === segments.length - 1;
         return (
           <span
             key={idx}
-            className={
-              isLast
-                ? "font-semibold text-[#B10E0E]"
-                : "text-[#B10E0E]/40 cursor-pointer"
-            }
+            className="flex items-center space-x-1"
+            style={{
+              fontWeight: isLast ? 600 : 400,
+              color: "var(--foreground)",
+              opacity: isLast ? 1 : 0.4,
+              cursor: isLast ? "default" : "pointer",
+            }}
           >
-            <span>›</span> {segment.charAt(0).toUpperCase() + segment.slice(1)}
+            <span>›</span>
+            <span>{segment.charAt(0).toUpperCase() + segment.slice(1)}</span>
           </span>
         );
       })}

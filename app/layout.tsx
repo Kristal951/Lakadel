@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ThemeSwitcherWrapper from "@/components/ThemeSwitcherWrapper";
+import Header from "@/components/shop/Header";
+import TopBar from "@/components/shop/TopBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,8 +27,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    const stored = localStorage.getItem("theme");
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (stored === "dark" || (!stored && systemDark)) {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (_) {}
+})();
+`,
+          }}
+        />
         <link rel="icon" href="/Lakadel.svg" type="image/svg+xml" />
 
         <link
@@ -53,7 +73,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased block`}
       >
-        {children}
+        <ThemeProvider>
+           <Header />
+           <TopBar />
+          {children}
+          <ThemeSwitcherWrapper />
+        </ThemeProvider>
       </body>
     </html>
   );
