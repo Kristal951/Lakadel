@@ -1,7 +1,6 @@
 import AboutUs from "@/components/Landing/AboutUs";
 import { Hero } from "@/components/Landing/Hero";
 import NavBar from "@/components/Landing/NavBar";
-import Image from "next/image";
 import Products from "../components/Landing/Products";
 import Contact from "../components/Landing/Contact";
 

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React, { useState, useRef, useEffect } from "react";
+import { useRef } from "react";
 import { CgProfile } from "react-icons/cg";
 import { IoBagOutline, IoSearchOutline } from "react-icons/io5";
 
@@ -31,47 +31,44 @@ const Header = () => {
 
       <div className="flex items-center gap-4">
         <div ref={searchRef} className="relative flex items-center">
- 
-    <input
-      type="text"
-      placeholder="Search products..."
-      className="
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="
         absolute right-0 top-1/2 transform -translate-y-1/2
         w-64 md:w-80 px-4 py-2
-        border border-foreground/30 placeholder:text-foreground/50 bg-white
-        rounded-full 
-        focus:outline-none focus:ring-2 focus:ring-(--accent,#B10E0E)
+        border border-foreground/30 placeholder:text-foreground/50
+        rounded-full bg-background
+        focus:outline-none focus:ring-2 focus:ring-foreground
         transition-all duration-300
         z-50
       "
-    />
+          />
 
-  <button
-    className="
+          <button
+            className="
       p-2 rounded-full
       hover:bg-gray-200/50
       active:scale-95
       transition transform
+      cursor-pointer
       z-50
     "
-  >
-    <IoSearchOutline className="w-6 h-6 text-foreground" />
-  </button>
-</div>
+          >
+            <IoSearchOutline className="w-6 h-6 text-foreground" />
+          </button>
+        </div>
 
-
-        {/* Bag */}
         <button
           onClick={goToBag}
-          className="p-2 rounded-full hover:bg-gray-200 transition"
+          className="p-2 rounded-full cursor-pointer hover:bg-gray-200 transition"
         >
           <IoBagOutline className="w-6 h-6" />
         </button>
 
-        {/* Profile */}
         <button
           onClick={() => console.log("profile")}
-          className="p-2 rounded-full hover:bg-gray-200 transition"
+          className="p-2 rounded-full cursor-pointer hover:bg-gray-200 transition"
         >
           <CgProfile className="w-6 h-6" />
         </button>

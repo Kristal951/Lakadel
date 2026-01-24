@@ -20,7 +20,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
-  // Detect system theme
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -36,13 +35,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => media.removeEventListener("change", applySystem);
   }, [theme]);
 
-  // Load saved theme
   useEffect(() => {
     const saved = localStorage.getItem("theme") as Theme | null;
     if (saved) setTheme(saved);
   }, []);
 
-  // Apply theme
   useEffect(() => {
     if (theme === "system") return;
 
