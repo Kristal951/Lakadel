@@ -147,11 +147,11 @@ export default function ShoppingBag() {
               <span>Shipping</span>
               <span>₦0</span>
             </div>
-            <div className="flex justify-between font-semibold text-xl mt-2 text-foreground)">
+            <div className="flex justify-between font-semibold text-xl mt-2 text-foreground">
               <span>Total</span>
               <span>₦{total.toLocaleString()}</span>
             </div>
-            <button className="mt-6 w-full py-3 cursor-pointer bg-(--accent,#B10E0E) text-white font-semibold rounded-lg hover:bg-[#a30c0c] transition">
+            <button className="mt-6 w-full py-3 cursor-pointer text-accent font-semibold rounded-lg hover:bg-foreground hover:text-background transition">
               Proceed to Checkout
             </button>
           </div>

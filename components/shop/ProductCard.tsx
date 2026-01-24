@@ -33,7 +33,7 @@ export default function ProductCard({
               </button>
             </div>
             <div className="w-full flex justify-between items-center">
-              <Link href={`/shop/product/${id}`} className="p-2 cursor-pointer gap-1 rounded-3xl text-sm bg-white/30 text-white flex">
+              <Link href={`/products/${id}`} className="p-2 cursor-pointer gap-1 rounded-3xl text-sm bg-white/30 text-white flex">
                 {" "}
                 <FiArrowUpLeft className="w-5 h-5"/> Products Details
               </Link>
