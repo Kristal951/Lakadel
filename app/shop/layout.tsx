@@ -1,6 +1,5 @@
 import Header from "@/components/shop/Header";
 import SidebarFilters from "@/components/shop/Sidebar";
-import TopBar from "@/components/shop/TopBar";
 import React from "react";
 
 export default function ShopLayout({

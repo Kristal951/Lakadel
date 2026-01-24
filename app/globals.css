@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #B10E0E;
-  --others: #0a0a0a;
+  --accent: #B10E0E;
    --hover: rgba(0, 0, 0, 0.06);
 }
 
@@ -26,6 +26,7 @@ html:not(.theme-ready) * {
   --background: #0a0a0a;
   --foreground: #ededed;
    --hover: rgba(255, 255, 255, 0.18);
+   --accent: #0a0a0a;
 }
 
 body {

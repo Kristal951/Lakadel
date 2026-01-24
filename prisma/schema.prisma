@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  GOOGLE
+  EMAIL
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String?      @unique
+  name         String?
+  password     String?
+  isGuest      Boolean      @default(false)
+  authProvider AuthProvider @default(EMAIL)
+  createdAt    DateTime     @default(now())
+  cart         Cart?
+  orders       Order[]
+}
+
+model Product {
+  id           String    @id @default(uuid())
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String
+  filters      String[]  
+  colors       String[]  
+  sizes        String[]  
+  createdAt    DateTime  @default(now())
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+}
+
+model Cart {
+  id      String     @id @default(uuid())
+  user    User       @relation(fields: [userId], references: [id])
+  userId  String     @unique
+  items   CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  cartId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int      @default(1)
+
+  @@unique([cartId, productId]) 
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  user       User?       @relation(fields: [userId], references: [id])
+  userId     String?
+  total      Float
+  createdAt  DateTime    @default(now())
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int      @default(1)
+  price     Float
+}

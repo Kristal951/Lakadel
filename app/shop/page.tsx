@@ -1,72 +1,33 @@
 import ProductCard from "@/components/shop/ProductCard";
+import prisma from "@/lib/prisma";
 import { BiSort } from "react-icons/bi";
 
-export default function Shop() {
-  const dummyProductsData = [
-    {
-      id: 2,
-      label: "White Shirt",
-      imageSrc: "/assets/IMG_3.jpg",
-      priceTag: 30,
-    },
-    {
-      id: 3,
-      label: "Black Shirt",
-      imageSrc: "/assets/IMG_4.jpg",
-      priceTag: 40,
-    },
-    {
-      id: 4,
-      label: "Second White Shirt Image",
-      imageSrc: "/assets/IMG_5.jpg",
-      priceTag: 50,
-    },
-    {
-      id: 7,
-      label: "Mara Top",
-      imageSrc: "/assets/IMG_8.jpg",
-      priceTag: 80,
-    },
-    {
-      id: 8,
-      label: "Tayson Shirt",
-      imageSrc: "/assets/IMG_9.jpg",
-      priceTag: 90,
-    },
-    {
-      id: 9,
-      label: "Fuckin Awesome Shirt",
-      imageSrc: "/assets/IMG_10.jpg",
-      priceTag: 100,
-    },
-  ];
+export default async function Shop() {
+  const products = await prisma.product.findMany();
+  console.log(products);
+
   return (
-    <div className="w-full flex flex-col h-full">
-      <div className="w-full flex justify-end">
+    <div className="w-full flex flex-col h-full p-4">
+      {/* Sort Button */}
+      <div className="w-full flex justify-end mb-4">
         <button
-          className="
-            flex items-center gap-1
-            px-2 py-1
-            rounded-lg
-            cursor-pointer
-            text-foreground
-            bg-rgba(0,0,0,0.12)
-            hover:bg-(--hover)
-            transition
-          "
+          style={{ backgroundColor: "rgba(0,0,0,0.12)" }}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer text-foreground hover:bg-gray-200 transition"
         >
           <BiSort className="w-5 h-5" />
           <p className="text-sm">Sort by</p>
         </button>
       </div>
-      <div className="grid grid-cols-3">
-        {dummyProductsData.map((product) => (
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {products.map((product) => (
           <ProductCard
             key={product.id}
             id={product.id.toString()}
-            SRC={product.imageSrc}
-            label={product.label}
-            price={product.priceTag}
+            SRC={product.imageUrl}
+            label={product.name}
+            price={product.price}
           />
         ))}
       </div>

@@ -1,4 +1,3 @@
-import { BiSort } from "react-icons/bi";
 import BreadCrumbs from "./BreadCrumbs";
 
 export default function TopBar() {

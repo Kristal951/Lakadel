@@ -2,7 +2,7 @@
 import { Trash2 } from "lucide-react";
 import { CiHeart } from "react-icons/ci";
 import Image from "next/image";
-import React, { useState } from "react";
+import { useState } from "react";
 
 type CartItem = {
   id: string;
@@ -15,7 +15,6 @@ type CartItem = {
 };
 
 export default function ShoppingBag() {
-  // Sample cart items
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: "1",

@@ -1,6 +1,5 @@
 "use client";
-import React, { useState } from "react";
-import ThemeSwitcher from "../ThemeSwitcher";
+import { useState } from "react";
 
 export default function SidebarFilters() {
   const categories = [
@@ -57,12 +56,7 @@ export default function SidebarFilters() {
                     type="checkbox"
                     checked={isChecked}
                     readOnly
-                    className="w-5 h-5 rounded transition"
-                    style={{
-                      accentColor: isChecked
-                        ? "var(--accent, #B10E0E)"
-                        : "var(--foreground)",
-                    }}
+                    className={`w-5 h-5 rounded transition ${isChecked ? "accent-foreground" : ""}`}
                   />
                   <span
                     className="select-none font-medium transition-colors"
@@ -100,12 +94,7 @@ export default function SidebarFilters() {
                     type="checkbox"
                     checked={isChecked}
                     readOnly
-                    className="w-5 h-5 rounded transition"
-                    style={{
-                      accentColor: isChecked
-                        ? "var(--accent, #B10E0E)"
-                        : "var(--foreground)",
-                    }}
+                    className={`w-5 h-5 rounded transition ${isChecked ? "accent-foreground" : ""}`}
                   />
                   <span
                     className="select-none font-medium transition-colors"
@@ -122,7 +111,6 @@ export default function SidebarFilters() {
           </ul>
         </div>
       </div>
-      {/* <ThemeSwitcher /> */}
     </aside>
   );
 }
