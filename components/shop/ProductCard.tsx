@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CiHeart } from "react-icons/ci";
 import { IoBagOutline } from "react-icons/io5";
 import { FiArrowUpLeft } from "react-icons/fi";
+import { useToast } from "@/hooks/useToast";
 
 export default function ProductCard({
   id,
@@ -23,6 +24,7 @@ export default function ProductCard({
   selectedColor: string;
 }) {
   const { addToCart } = useCartStore();
+  const { showToast } = useToast();
 
   const handleAddToCart = () => {
     const item = {
@@ -32,6 +34,7 @@ export default function ProductCard({
       selectedColor: selectedColor,
     };
     addToCart(item);
+    showToast("Item added to cart!", "success");
   };
 
   return (
