@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Header from "@/components/shop/Header";
 import TopBar from "@/components/shop/TopBar";
 import ThemeSwitcherWrapper from "@/components/ui/ThemeSwitcherWrapper";
+import { ToastProvider } from "@/hooks/useToast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,12 +74,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased block`}
       >
-        <ThemeProvider>
-           <Header />
-           <TopBar />
-          {children}
-          <ThemeSwitcherWrapper />
-        </ThemeProvider>
+        <ToastProvider>
+          <ThemeProvider>
+            <Header />
+            <TopBar />
+            {children}
+            <ThemeSwitcherWrapper />
+          </ThemeProvider>
+        </ToastProvider>
       </body>
     </html>
   );

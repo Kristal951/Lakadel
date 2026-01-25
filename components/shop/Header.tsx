@@ -1,4 +1,5 @@
 "use client";
+import useCartStore from "@/store/cartStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import { IoBagOutline, IoSearchOutline } from "react-icons/io5";
 const Header = () => {
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
+  const { items } = useCartStore();
 
   const goToBag = () => router.push("/shopping-bag");
 
@@ -62,8 +64,14 @@ const Header = () => {
 
         <button
           onClick={goToBag}
-          className="p-2 rounded-full cursor-pointer hover:bg-gray-200 transition"
+          className="p-2 rounded-full relative cursor-pointer hover:bg-gray-200 transition-colors"
         >
+          {items.length > 0 && (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-background bg-foreground rounded-full">
+              {items.length}
+            </span>
+          )}
+
           <IoBagOutline className="w-6 h-6" />
         </button>
 
