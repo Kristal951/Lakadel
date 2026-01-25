@@ -59,6 +59,9 @@ export default function ProductPage() {
             SRC={product.imageSrc}
             label={product.label}
             price={product.priceTag}
+            selectedColor={product.colors[0].name}
+            selectedSize={product.sizes[0]}
+            quantity={1}
           />
         ))}
       </div>

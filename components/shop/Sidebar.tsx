@@ -1,7 +1,10 @@
 "use client";
-import { useState } from "react";
+import useProductStore from "@/store/productStore";
+import { useEffect, useState } from "react";
 
 export default function SidebarFilters() {
+  const { filters, setFilter, filteredProducts } = useProductStore();
+
   const categories = [
     "T-shirts / Tops",
     "Trousers",
@@ -13,6 +16,14 @@ export default function SidebarFilters() {
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+
+  useEffect(() => {
+    setFilter("sizes", selectedSizes);
+  }, [selectedSizes, setFilter]);
+
+  useEffect(() => {
+    setFilter("categories", selectedCategories);
+  }, [selectedCategories, setFilter]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategories((prev) =>
@@ -35,7 +46,6 @@ export default function SidebarFilters() {
       }}
     >
       <div>
-        {/* Categories */}
         <div className="w-full flex flex-col">
           <h3
             className="text-lg font-semibold select-none"
@@ -50,12 +60,11 @@ export default function SidebarFilters() {
                 <li
                   key={cat}
                   className="flex items-center gap-2 cursor-pointer"
-                  onClick={() => toggleCategory(cat)}
                 >
                   <input
                     type="checkbox"
                     checked={isChecked}
-                    readOnly
+                    onChange={() => toggleCategory(cat)}
                     className={`w-5 h-5 rounded transition ${isChecked ? "accent-foreground" : ""}`}
                   />
                   <span
@@ -64,6 +73,7 @@ export default function SidebarFilters() {
                       color: "var(--foreground)",
                       opacity: isChecked ? 1 : 0.7,
                     }}
+                    onClick={() => toggleCategory(cat)}
                   >
                     {cat}
                   </span>
@@ -73,7 +83,6 @@ export default function SidebarFilters() {
           </ul>
         </div>
 
-        {/* Sizes */}
         <div className="w-full flex flex-col mt-4">
           <h3
             className="text-lg font-semibold select-none"
@@ -88,12 +97,11 @@ export default function SidebarFilters() {
                 <li
                   key={size}
                   className="flex items-center gap-2 cursor-pointer"
-                  onClick={() => toggleSizes(size)}
                 >
                   <input
                     type="checkbox"
                     checked={isChecked}
-                    readOnly
+                    onChange={() => toggleSizes(size)}
                     className={`w-5 h-5 rounded transition ${isChecked ? "accent-foreground" : ""}`}
                   />
                   <span
@@ -102,6 +110,7 @@ export default function SidebarFilters() {
                       color: "var(--foreground)",
                       opacity: isChecked ? 1 : 0.7,
                     }}
+                    onClick={() => toggleSizes(size)}
                   >
                     {size}
                   </span>

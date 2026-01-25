@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { CgProfile } from "react-icons/cg";
@@ -19,7 +20,7 @@ const Header = () => {
         color: "var(--foreground)",
       }}
     >
-      <div className="relative h-11 w-35">
+      <Link href="/shop" className="relative h-11 w-35">
         <Image
           src="/Lakadel2.png"
           alt="Lakadel logo"
@@ -27,7 +28,7 @@ const Header = () => {
           priority
           className="object-contain"
         />
-      </div>
+      </Link>
 
       <div className="flex items-center gap-4">
         <div ref={searchRef} className="relative flex items-center">

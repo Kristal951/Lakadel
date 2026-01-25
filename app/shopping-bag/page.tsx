@@ -1,162 +1,176 @@
 "use client";
+
 import { Trash2 } from "lucide-react";
 import { CiHeart } from "react-icons/ci";
 import Image from "next/image";
-import { useState } from "react";
+import useCartStore from "@/store/cartStore";
+import EmptyState from "@/components/ui/EmptyState";
+import { useRouter } from "next/navigation";
+import { IoBagOutline } from "react-icons/io5";
 
-type CartItem = {
+type Product = {
   id: string;
   name: string;
   price: number;
-  quantity: number;
-  size: string;
-  color: string;
   image: string;
 };
 
-export default function ShoppingBag() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "White Cotton Shirt",
-      price: 30000,
-      quantity: 1,
-      size: "XL",
-      color: "White",
-      image: "/assets/IMG_3.jpg",
-    },
-    {
-      id: "2",
-      name: "Black Trousers",
-      price: 45000,
-      quantity: 2,
-      size: "M",
-      color: "Black",
-      image: "/assets/IMG_4.jpg",
-    },
-  ]);
+export default function ShoppingBag({ products }: { products: Product[] }) {
+  const { items, removeFromCart, updateQuantity } = useCartStore();
+  const router = useRouter();
 
-  // Remove item
-  const removeItem = (id: string) => {
-    setCartItems(cartItems.filter((item) => item.id !== id));
-  };
+  const goToShop = () => router.push("/shop");
 
-  const updateQuantity = (id: string, delta: number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item,
-      ),
-    );
-  };
+  const cartItems = items
+    .map((cartItem) => {
+      const product = products.find((p) => p.id === cartItem.id);
+      if (!product) return null;
 
-  const total = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+      return {
+        ...cartItem,
+        product,
+      };
+    })
+    .filter(Boolean) as {
+    id: string;
+    quantity: number;
+    selectedSize?: string;
+    selectedColor?: string;
+    product: Product;
+  }[];
+
+  const totalPrice = cartItems.reduce(
+    (sum, i) => sum + i.quantity * i.product.price,
     0,
   );
 
+  if (cartItems.length === 0) {
+    return (
+      <section className="max-w-8xl mx-auto py-10 px-6 md:px-10 flex items-center justify-center">
+        <EmptyState
+          text="Your cart is empty"
+          Icon={IoBagOutline}
+          retry={false}
+          buttonText="Start shopping"
+          onClick={goToShop}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="max-w-8xl mx-auto py-10 px-6 md:px-10">
-      <h1 className="text-4xl md:text-5xl font-bold mb-10 text-foreground">
+      <h1 className="text-4xl md:text-5xl font-bold mb-10">
         Your Shopping Bag
       </h1>
 
-      {cartItems.length === 0 ? (
-        <p className="text-xl text-gray-500">Your shopping bag is empty.</p>
-      ) : (
-        <div className="w-full grid md:grid-cols-3 gap-8">
-          <div className="col-span-2 flex flex-col gap-6">
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col md:flex-row items-start md:items-center gap-8 p-4 rounded-xl shadow-lg border border-gray-100"
-              >
-                <div className="relative w-full md:w-100 aspect-square rounded-xl overflow-hidden shadow-md">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                  />
+      <div className="grid md:grid-cols-3 gap-8">
+        <div className="col-span-2 flex flex-col gap-6">
+          {cartItems.map((item) => (
+            <div
+              key={`${item.id}-${item.selectedColor}-${item.selectedSize}`}
+              className="flex gap-6 p-4 rounded-xl border shadow"
+            >
+              <div className="relative w-40 aspect-square rounded-xl overflow-hidden">
+                <Image
+                  src={item.product.image}
+                  alt={item.product.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="flex-1">
+                <h2 className="text-2xl font-semibold">{item.product.name}</h2>
+
+                <div className="text-sm opacity-70 mt-1">
+                  {item.selectedSize && <>Size: {item.selectedSize}</>}
+                  {item.selectedColor && <> • Color: {item.selectedColor}</>}
                 </div>
 
-                <div className="flex-1 flex flex-col gap-2 w-full">
-                  <h2 className="font-semibold text-2xl text-foreground">
-                    {item.name}
-                  </h2>
+                <p className="text-xl font-semibold mt-2">
+                  ₦{item.product.price.toLocaleString()}
+                </p>
 
-                  <div className="flex flex-wrap gap-4 text-foreground/70">
-                    <p>
-                      <span className="font-medium">Size:</span> {item.size}
-                    </p>
-                    <p>
-                      <span className="font-medium">Color:</span> {item.color}
-                    </p>
-                  </div>
+                {/* Quantity */}
+                <div className="flex items-center gap-4 mt-3">
+                  <button
+                    onClick={() =>
+                      updateQuantity(
+                        item.id,
+                        item.quantity - 1,
+                        item.selectedColor,
+                        item.selectedSize,
+                      )
+                    }
+                    className="px-3 border rounded"
+                  >
+                    -
+                  </button>
 
-                  <p className="text-xl font-semibold mt-2 text-foreground">
-                    ₦{item.price.toLocaleString()}
-                  </p>
+                  <span>{item.quantity}</span>
 
-                  <div className="flex items-center gap-4 mt-3">
-                    <button
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="px-4 py-1 border rounded-md cursor-pointer hover:bg-[var(--foreground)/10] transition"
-                    >
-                      -
-                    </button>
-                    <span className="text-lg">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="px-4 py-1 border rounded-md cursor-pointer hover:bg-[var(--foreground)/10] transition"
-                    >
-                      +
-                    </button>
-                  </div>
+                  <button
+                    onClick={() =>
+                      updateQuantity(
+                        item.id,
+                        item.quantity + 1,
+                        item.selectedColor,
+                        item.selectedSize,
+                      )
+                    }
+                    className="px-3 border rounded"
+                  >
+                    +
+                  </button>
+                </div>
 
-                  <div className="flex items-center gap-3 mt-4">
-                    <button
-                      onClick={() => console.log("favorite", item.id)}
-                      className="p-2 rounded-full hover:bg-foreground/30  cursor-pointer transition text-red-500"
-                    >
-                      <CiHeart className="w-6 h-6" />
-                    </button>
+                <div className="flex gap-3 mt-4">
+                  <button className="text-red-500">
+                    <CiHeart size={22} />
+                  </button>
 
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 rounded-full hover:bg-foreground/30 cursor-pointer transition text-gray-500"
-                    >
-                      <Trash2 className="w-6 h-6" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() =>
+                      removeFromCart(
+                        item.id,
+                        item.selectedColor,
+                        item.selectedSize,
+                      )
+                    }
+                    className="text-gray-500"
+                  >
+                    <Trash2 size={22} />
+                  </button>
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-6 rounded-xl border shadow h-max">
+          <h2 className="text-2xl font-semibold mb-4">Order Summary</h2>
+
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span>₦{totalPrice.toLocaleString()}</span>
           </div>
 
-          <div className="flex flex-col gap-6 p-6 rounded-xl shadow-lg border border-gray-100 h-max">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Order Summary
-            </h2>
-            <div className="flex justify-between text-lg text-foreground/70">
-              <span>Subtotal</span>
-              <span>₦{total.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-lg text-foreground/70">
-              <span>Shipping</span>
-              <span>₦0</span>
-            </div>
-            <div className="flex justify-between font-semibold text-xl mt-2 text-foreground)">
-              <span>Total</span>
-              <span>₦{total.toLocaleString()}</span>
-            </div>
-            <button className="mt-6 w-full py-3 cursor-pointer bg-(--accent,#B10E0E) text-white font-semibold rounded-lg hover:bg-[#a30c0c] transition">
-              Proceed to Checkout
-            </button>
+          <div className="flex justify-between mt-2">
+            <span>Shipping</span>
+            <span>₦0</span>
           </div>
+
+          <div className="flex justify-between font-bold text-xl mt-4">
+            <span>Total</span>
+            <span>₦{totalPrice.toLocaleString()}</span>
+          </div>
+
+          <button className="mt-6 w-full py-3 rounded-lg bg-black text-white">
+            Proceed to Checkout
+          </button>
         </div>
-      )}
+      </div>
     </section>
   );
 }
