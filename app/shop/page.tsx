@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import ProductCard from "@/components/shop/ProductCard";
 import Spinner from "@/components/ui/spinner";
 import useProductStore from "@/store/productStore";
-import { BiSort } from "react-icons/bi";
 import EmptyState from "@/components/ui/EmptyState";
 import SortButton from "@/components/shop/SortButton";
 
 export default function Shop() {
-  const { products, loading, error, fetchProducts, filteredProducts } =
+  const { products, loading, query, error, fetchProducts, filteredProducts } =
     useProductStore();
 
   useEffect(() => {
