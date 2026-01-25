@@ -14,6 +14,7 @@ export default function ProductCard({
   quantity = 1,
   selectedSize,
   selectedColor,
+  description,
 }: {
   id: string;
   label: string;
@@ -22,6 +23,7 @@ export default function ProductCard({
   quantity: number;
   selectedSize: string;
   selectedColor: string;
+  description: string;
 }) {
   const { addToCart } = useCartStore();
   const { showToast } = useToast();
@@ -73,7 +75,8 @@ export default function ProductCard({
         <h3 className="text-base text-foreground font-semibold tracking-wide">
           {label}
         </h3>
-        <p className="text-base text-foreground/80">
+        <h2 className="text-base text-foreground/70">{description}</h2>
+        <p className="text-base text-foreground/60">
           ${price.toLocaleString()}
         </p>
       </div>

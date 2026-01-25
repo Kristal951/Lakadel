@@ -3,7 +3,7 @@ import useProductStore from "@/store/productStore";
 import { useEffect, useState } from "react";
 
 export default function SidebarFilters() {
-  const { filters, setFilter, filteredProducts } = useProductStore();
+  const { filters, setFilter } = useProductStore();
 
   const categories = [
     "T-shirts / Tops",
