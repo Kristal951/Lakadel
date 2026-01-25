@@ -10,11 +10,14 @@ interface ProductState {
     categories: string[];
   };
   sortBy: "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc" | "newest" | null;
+  query: string;
+
   setProducts: (products: Product[]) => void;
   addProduct: (product: Product) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setSort: (sortBy: ProductState["sortBy"]) => void;
+  setQuery: (query: string) => void;
 
   fetchProducts: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
@@ -28,6 +31,8 @@ const useProductStore = create<ProductState>((set, get) => ({
   error: null,
   filters: { sizes: [], categories: [] },
   sortBy: null,
+  query: "",
+  setQuery: (q) => set({ query: q }),
 
   setProducts: (products) => set({ products }),
   setLoading: (loading) => set({ loading }),
@@ -104,6 +109,22 @@ const useProductStore = create<ProductState>((set, get) => ({
 
     return products;
   },
+  searchedProducts: () => {
+  const products = get().products;
+  const { query } = get();
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(query.toLowerCase()) ||
+      p.description.toLowerCase().includes(query.toLowerCase()) ||
+      p.colors.some((color) =>
+        color.name.toLowerCase().includes(query.toLowerCase())
+      )
+  );
+
+  return filteredProducts;
+},
+
 }));
 
 export default useProductStore;

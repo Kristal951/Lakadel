@@ -1,16 +1,25 @@
 "use client";
+import useProductStore from "@/store/productStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CgProfile } from "react-icons/cg";
 import { IoBagOutline, IoSearchOutline } from "react-icons/io5";
 
 const Header = () => {
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
+  const { query, setQuery } = useProductStore();
 
   const goToBag = () => router.push("/shopping-bag");
+
+  const [localQuery, setLocalQuery] = useState(query);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(localQuery), 300);
+    return () => clearTimeout(timer);
+  }, [localQuery]);
 
   return (
     <div
@@ -35,6 +44,8 @@ const Header = () => {
           <input
             type="text"
             placeholder="Search products..."
+            value={localQuery}
+            onChange={(e) => setLocalQuery(e.target.value)}
             className="
         absolute right-0 top-1/2 transform -translate-y-1/2
         w-64 md:w-80 px-4 py-2

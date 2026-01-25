@@ -67,10 +67,10 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-base text-[#B10E0E] dark:text-white font-semibold tracking-wide">
+        <h3 className="text-base text-foreground font-semibold tracking-wide">
           {label}
         </h3>
-        <p className="text-base dark:text-white text-[#B10E0E]/80">
+        <p className="text-base text-foreground/80">
           ${price.toLocaleString()}
         </p>
       </div>
