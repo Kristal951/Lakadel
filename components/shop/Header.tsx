@@ -45,12 +45,12 @@ const Header = () => {
         <div ref={searchRef} className="relative flex items-center">
           <input
             type="text"
-            placeholder="Search products by name, or price or description..."
+            placeholder="Search products by name, or price ..."
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
             className="
         absolute right-0 top-1/2 transform -translate-y-1/2
-        w-64 md:w-105 px-4 py-2
+        w-64 md:w-85 px-4 py-2
         border border-foreground/30 placeholder:text-foreground/50
         rounded-full bg-background
         focus:outline-none focus:ring-2 focus:ring-foreground
