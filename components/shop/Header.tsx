@@ -1,5 +1,6 @@
 "use client";
 import useCartStore from "@/store/cartStore";
+import useProductStore from "@/store/productStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ const Header = () => {
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
   const { items } = useCartStore();
+  const { query, setQuery } = useProductStore();
 
   const goToBag = () => router.push("/shopping-bag");
 
@@ -43,12 +45,12 @@ const Header = () => {
         <div ref={searchRef} className="relative flex items-center">
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder="Search products by name, or price or description..."
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
             className="
         absolute right-0 top-1/2 transform -translate-y-1/2
-        w-64 md:w-80 px-4 py-2
+        w-64 md:w-105 px-4 py-2
         border border-foreground/30 placeholder:text-foreground/50
         rounded-full bg-background
         focus:outline-none focus:ring-2 focus:ring-foreground
