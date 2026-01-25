@@ -69,19 +69,16 @@ const useProductStore = create<ProductState>((set, get) => ({
     const { sizes, categories } = get().filters;
     const { sortBy } = get();
 
-    // Apply size filter
     if (sizes.length > 0) {
       products = products.filter((p) => p.sizes.some((s) => sizes.includes(s)));
     }
 
-    // Apply category filter
     if (categories.length > 0) {
       products = products.filter((p) =>
         p.filters.some((f) => categories.includes(f)),
       );
     }
 
-    // Apply sorting
     if (sortBy) {
       switch (sortBy) {
         case "priceAsc":

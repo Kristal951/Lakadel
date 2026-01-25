@@ -25,7 +25,11 @@ export default function Shop() {
   }
 
   if (error) {
-    return <EmptyState text={error} />;
+    return(
+      <div className="w-full h-full flex items-center flex-col justify-center">
+        <EmptyState retry text="Failed to get Products" onClick={fetchProducts} buttonText="Go to Shop"/>
+      </div>
+    )
   }
 
   if (products.length === 0) {
@@ -50,6 +54,9 @@ export default function Shop() {
             SRC={product.images[0]}
             label={product.name}
             price={product.price}
+             selectedColor={product.colors[0].name}
+            selectedSize={product.sizes[0]}
+            quantity={1}
           />
         ))}
       </div>
