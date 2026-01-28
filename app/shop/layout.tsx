@@ -14,7 +14,7 @@ export default function ShopLayout({
         <Header />
         <TopBar />
         <SidebarFilters />
-        <main className="flex-1 ml-[20%] mt-30 p-4 ">{children}</main>
+        <main className="flex-1 ml-0 md:ml-[20%] mt-30 md:p-4 pb-8">{children}</main>
       </div>
     </div>
   );

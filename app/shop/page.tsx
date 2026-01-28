@@ -51,10 +51,10 @@ export default function Shop() {
   }
 
   return (
-    <div className="w-full flex flex-col h-full p-4">
+    <div className="w-full flex flex-col h-full md:p-4">
       <SortButton />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:mt-4 p-4">
         {productsToShow.map((product) => (
           <ProductCard
             key={product.id}
