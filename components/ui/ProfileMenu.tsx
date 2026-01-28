@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRef, useEffect } from "react";
 import { FiSettings, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 interface ProfileMenuProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,8 +35,9 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
 
   if (!open) return null;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setOpen(false);
+    await signOut({ redirect: false });
     logout();
     resetRates();
     router.push("/auth/login");
