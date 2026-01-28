@@ -1,3 +1,14 @@
+<<<<<<< Updated upstream
+=======
+// prisma/schema.prisma
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+>>>>>>> Stashed changes
 generator client {
   provider = "prisma-client-js"
 }
@@ -61,6 +72,13 @@ model Order {
   user       User?       @relation(fields: [userId], references: [id])
   userId     String?
   total      Float
+<<<<<<< Updated upstream
+=======
+  currency   String      @default("NGN")
+  status     OrderStatus @default(PENDING)
+  paystackRef String?    @unique
+  paidAt     DateTime?
+>>>>>>> Stashed changes
   createdAt  DateTime    @default(now())
   orderItems OrderItem[]
 }

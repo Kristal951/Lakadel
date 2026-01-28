@@ -14,6 +14,7 @@ export default function Shop() {
 
   useEffect(() => {
     fetchProducts();
+    console.log('first')
   }, [fetchProducts]);
 
   if (loading) {
