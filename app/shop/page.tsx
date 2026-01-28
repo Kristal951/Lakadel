@@ -1,33 +1,36 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ProductCard from "@/components/shop/ProductCard";
 import Spinner from "@/components/ui/spinner";
 import useProductStore from "@/store/productStore";
 import EmptyState from "@/components/ui/EmptyState";
 import SortButton from "@/components/shop/SortButton";
+import SelectCountryModal from "@/components/ui/SelectCountryModal";
 
 export default function Shop() {
+  const [showModal, setShowModal] = useState(false);
   const { loading, error, fetchProducts, filteredAndSearchedProducts } =
     useProductStore();
 
-  // Get combined filtered + searched products
   const productsToShow = filteredAndSearchedProducts();
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // --- Loading state ---
+  useEffect(() => {
+    setShowModal(true);
+  }, [showModal]);
+
   if (loading) {
     return (
       <div className="flex w-full h-full items-center justify-center">
-        <Spinner />
+        <Spinner w="10" h="10" />
       </div>
     );
   }
 
-  // --- Error state ---
   if (error) {
     return (
       <div className="w-full h-full flex items-center flex-col justify-center">
@@ -64,6 +67,8 @@ export default function Shop() {
           />
         ))}
       </div>
+
+      {showModal && <SelectCountryModal />}
     </div>
   );
 }

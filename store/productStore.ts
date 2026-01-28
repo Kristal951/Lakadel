@@ -1,29 +1,5 @@
 import { create } from "zustand";
-import { Product } from "./types";
-
-interface ProductState {
-  products: Product[];
-  loading: boolean;
-  error: string | null;
-  filters: {
-    sizes: string[];
-    categories: string[];
-  };
-  sortBy: "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc" | "newest" | null;
-  query: string;
-
-  setProducts: (products: Product[]) => void;
-  addProduct: (product: Product) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  setSort: (sortBy: ProductState["sortBy"]) => void;
-  setQuery: (query: string) => void;
-  setFilter: (type: "sizes" | "categories", value: string[]) => void;
-
-  fetchProducts: () => Promise<void>;
-  getProductById: (id: string) => Product | undefined;
-  filteredAndSearchedProducts: () => Product[];
-}
+import { Product, ProductState } from "./types";
 
 const useProductStore = create<ProductState>((set, get) => ({
   products: [],
