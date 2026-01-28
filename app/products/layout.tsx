@@ -1,7 +1,16 @@
+import Header from "@/components/shop/Header";
+import TopBar from "@/components/shop/TopBar";
+
 export default function ProductsPageLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="flex-1 w-full mt-30">{children}</div>;
+  return (
+    <div className="flex-1 w-full mt-30">
+      <Header />
+      <TopBar />
+      {children}
+    </div>
+  );
 }
