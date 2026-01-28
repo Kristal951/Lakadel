@@ -17,7 +17,6 @@ export default function SessionSync() {
 
     if (!session?.user) {
       logout();
-      router.push("/auth/login");
       return;
     }
 
