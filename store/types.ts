@@ -105,10 +105,14 @@ export interface UserState {
     name: string;
     email: string;
     password: string;
-  }) => Promise<void>;
+  }) => User | null | Promise<any>;
+  loginUser: (data: { email: string; password: string }) => User | null | Promise<any>;
 }
 
-export interface RateStore {
+export interface ExchangeRateState {
   rates: Record<string, number>;
+  loading: boolean;
+  error: string | null;
   fetchRates: () => Promise<void>;
-};
+  resetRates: () => void;
+}

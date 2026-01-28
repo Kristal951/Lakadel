@@ -7,11 +7,13 @@ import useProductStore from "@/store/productStore";
 import EmptyState from "@/components/ui/EmptyState";
 import SortButton from "@/components/shop/SortButton";
 import SelectCountryModal from "@/components/ui/SelectCountryModal";
+import useUserStore from "@/store/userStore";
 
 export default function Shop() {
   const [showModal, setShowModal] = useState(false);
   const { loading, error, fetchProducts, filteredAndSearchedProducts } =
     useProductStore();
+  const { user } = useUserStore();
 
   const productsToShow = filteredAndSearchedProducts();
 
@@ -68,7 +70,7 @@ export default function Shop() {
         ))}
       </div>
 
-      {showModal && <SelectCountryModal />}
+      {showModal && !user && <SelectCountryModal />}
     </div>
   );
 }

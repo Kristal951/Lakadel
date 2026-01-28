@@ -1,15 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import Spinner from "@/components/ui/spinner";
+import { useToast } from "@/hooks/useToast";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
+import { signIn } from "next-auth/react";
 
 export default function FloatingLabelLogin() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { showToast } = useToast();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (!err) return;
+
+    if (err === "OAuthAccountNotLinked") {
+      showToast(
+        "This email already exists with another sign-in method. Use your original login method, or we can link Google.",
+        "error"
+      );
+      return;
+    }
+
+    showToast("Login failed. Please try again.", "error");
+  }, [searchParams, showToast]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Logging in with ${email}`);
+    setSubmitting(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        callbackUrl: "/shop",
+      });
+
+      if (result?.error) {
+        showToast("Invalid email or password", "error");
+        return;
+      }
+
+      showToast("Welcome back!", "success");
+      router.push(result?.url || "/shop");
+    } catch (err: any) {
+      showToast(err?.message || "Login failed. Please try again.", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    await signIn("google", { callbackUrl: "/shop" });
   };
 
   return (
@@ -19,12 +68,15 @@ export default function FloatingLabelLogin() {
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
             Welcome back
           </h1>
-          <p className="text-foreground/60 mt-2">Please enter your details to sign in</p>
+          <p className="text-foreground/60 mt-2">
+            Please enter your details to sign in
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <button
             type="button"
+            onClick={handleGoogle}
             className="flex w-full items-center justify-center gap-3 px-4 py-3 border border-foreground/30 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
           >
             <FcGoogle size={22} />
@@ -33,7 +85,9 @@ export default function FloatingLabelLogin() {
 
           <div className="relative flex items-center py-2">
             <div className="grow border-t border-foreground/30"></div>
-            <span className="shrink mx-4 text-foreground/70 text-xs uppercase tracking-widest">or</span>
+            <span className="shrink mx-4 text-foreground/70 text-xs uppercase tracking-widest">
+              or
+            </span>
             <div className="grow border-t border-foreground/30"></div>
           </div>
 
@@ -50,8 +104,8 @@ export default function FloatingLabelLogin() {
               />
               <label
                 htmlFor="email"
-                className="absolute left-4 top-2 text-xs font-semibold text-foreground/70 transition-all 
-                peer-placeholder-shown:text-base peer-placeholder-shown:text-foreground/50  peer-placeholder-shown:font-normal peer-placeholder-shown:top-4
+                className="absolute left-4 top-2 text-xs font-semibold text-foreground/70 transition-all
+                peer-placeholder-shown:text-base peer-placeholder-shown:text-foreground/50 peer-placeholder-shown:font-normal peer-placeholder-shown:top-4
                 peer-focus:top-2 peer-focus:text-xs peer-focus:text-foreground/70 peer-focus:font-semibold pointer-events-none"
               >
                 Email Address
@@ -70,8 +124,8 @@ export default function FloatingLabelLogin() {
               />
               <label
                 htmlFor="password"
-                className="absolute left-4 top-2 text-xs font-semibold text-foreground/50 transition-all 
-                peer-placeholder-shown:text-base peer-placeholder-shown:text-foreground/50  peer-placeholder-shown:font-normal peer-placeholder-shown:top-4
+                className="absolute left-4 top-2 text-xs font-semibold text-foreground/50 transition-all
+                peer-placeholder-shown:text-base peer-placeholder-shown:text-foreground/50 peer-placeholder-shown:font-normal peer-placeholder-shown:top-4
                 peer-focus:top-2 peer-focus:text-xs peer-focus:text-foreground/70 peer-focus:font-semibold pointer-events-none"
               >
                 Password
@@ -81,22 +135,31 @@ export default function FloatingLabelLogin() {
 
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 cursor-pointer text-foreground/70">
-              <input type="checkbox" className="w-4 h-4 rounded border-slate-300 accent-foreground focus:ring-foreground" />
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-slate-300 accent-foreground focus:ring-foreground"
+              />
               Remember me
             </label>
-            <a href="#" className="font-medium text-foreground hover:underline">Forgot password?</a>
+            <a href="#" className="font-medium text-foreground hover:underline">
+              Forgot password?
+            </a>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3.5 px-4 bg-foreground/90 text-background font-semibold rounded-xl hover:bg-foreground transition-all duration-200 shadow-lg shadow-slate-200 active:scale-[0.99]"
+            disabled={submitting || !email || !password}
+            className="w-full py-3.5 px-4 disabled:opacity-60 disabled:cursor-not-allowed bg-foreground/90 text-background font-semibold rounded-xl hover:bg-foreground transition-all duration-200 shadow-lg shadow-slate-200 active:scale-[0.99]"
           >
-            Sign in
+            {submitting ? <Spinner h="5" w="5" /> : <p>Sign In</p>}
           </button>
 
           <p className="text-center text-foreground/70 text-sm mt-6">
             New here?{" "}
-            <a href="/auth/register" className="font-semibold text-foreground hover:underline underline-offset-4">
+            <a
+              href="/auth/register"
+              className="font-semibold text-foreground hover:underline underline-offset-4"
+            >
               Create an account
             </a>
           </p>

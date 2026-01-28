@@ -1,18 +1,9 @@
-import NextAuth, { NextAuthOptions, User } from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import EmailProvider from "next-auth/providers/email";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-
-interface ExtendedSession {
-  user: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    currency?: string | null;
-  };
-}
+import bcrypt from "bcrypt";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -20,25 +11,57 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // allowDangerousEmailAccountLinking: true,
     }),
-    EmailProvider({
-      server: process.env.EMAIL_SERVER!,
-      from: process.env.EMAIL_FROM!,
+
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email?.toLowerCase().trim();
+        const password = credentials?.password;
+
+        if (!email || !password) return null;
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user?.password) return null;
+
+        const ok = await bcrypt.compare(password, user.password);
+        if (!ok) return null;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          currency: user.currency,
+        };
+      },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
+
+  session: { strategy: "jwt" },
+
   callbacks: {
-    async session({ session, user }) {
-      (session.user as any).id = user.id;
-      (session.user as any).currency = (user as any).currency;
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = (user as any).id;
+        token.currency = (user as any).currency ?? "NGN";
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      (session.user as any).id = token.id;
+      (session.user as any).currency = token.currency ?? "NGN";
       return session;
     },
   },
+
   pages: {
     signIn: "/auth/login",
-    error: "/login",
+    error: "/auth/login",
   },
 };
 

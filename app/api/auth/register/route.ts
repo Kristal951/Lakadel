@@ -3,8 +3,6 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import dotenv from "dotenv";
-dotenv.config;
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -28,14 +26,21 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "User already exists" },
+        { message: "User already exists, please use another email." },
         { status: 409 },
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { success: false, message: "Password must be at least 6 characters" },
+        { status: 400 },
       );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
@@ -46,9 +51,17 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        currency: user.currency,
+      },
+    });
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       { message: "Something went wrong" },
       { status: 500 },

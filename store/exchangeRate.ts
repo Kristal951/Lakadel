@@ -1,17 +1,21 @@
-// store/exchangeRateStore.ts
 import { create } from "zustand";
-import { RateStore } from "./types";
+import { ExchangeRateState } from "./types";
 
-export const useExchangeRateStore = create<RateStore>((set) => ({
-  rates: { NGN: 1, USD: 0.00067, EUR: 0.00062, GBP: 0.00053 },
+export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
+  rates: {},
+  loading: false,
+  error: null,
 
   fetchRates: async () => {
+    set({ loading: true, error: null });
     try {
       const res = await fetch("/api/exchange-rates");
       const data = await res.json();
-      set({ rates: { NGN: 1, ...data } });
-    } catch (err) {
-      console.warn("Using fallback rates due to fetch failure", err);
+      set({ rates: data, loading: false });
+    } catch (err: any) {
+      set({ error: err.message, loading: false });
     }
   },
+
+  resetRates: () => set({ rates: {} }),
 }));

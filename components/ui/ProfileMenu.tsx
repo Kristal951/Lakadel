@@ -1,10 +1,12 @@
 "use client";
 
+import useUserStore from "@/store/userStore";
+import { useExchangeRateStore } from "@/store/exchangeRate";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect } from "react";
 import { FiSettings, FiLogOut } from "react-icons/fi";
-// import { signOut } from "next-auth/react"; // uncomment if using NextAuth
+import { useRouter } from "next/navigation";
 
 interface ProfileMenuProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -13,6 +15,9 @@ interface ProfileMenuProps {
 
 export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { logout, user, currency, currencySymbol } = useUserStore();
+  const { resetRates } = useExchangeRateStore.getState();
 
   useEffect(() => {
     if (!open) return;
@@ -24,34 +29,58 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, setOpen]);
 
   if (!open) return null;
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setOpen(false);
-    // await signOut({ callbackUrl: "/login" });
-    console.log("Handle Logout");
+    logout();
+    resetRates();
+    router.push("/auth/login");
+  };
+
+  const handleLoginRedirect = () => {
+    setOpen(false);
+    router.push("/auth/login");
   };
 
   return (
     <div
       ref={menuRef}
-      className="absolute right-0 top-14 w-52 rounded-xl border border-foreground/20 bg-background shadow-lg py-2 z-100"
+      className="absolute right-0 top-14 w-52 rounded-xl border border-foreground/20 bg-background shadow-lg py-2 z-50"
     >
       <div className="px-4 py-2 border-b border-foreground/10 mb-1">
-        <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
-          Account
-        </p>
+        {user ? (
+          <div className="flex flex-col">
+            <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
+            <p className="text-xs text-foreground/50 truncate">
+              {currencySymbol} {currency}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+              Account
+            </p>
+            <button
+              onClick={handleLoginRedirect}
+              className="w-full py-1.5 px-2 text-xs text-white bg-foreground rounded-md hover:bg-foreground/90 transition"
+            >
+              Login / Sign Up
+            </button>
+          </div>
+        )}
       </div>
 
       <ul className="flex flex-col">
         <li>
           <Link
             href="/wishlist"
-            className="flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition"
+            className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
+              !user ? "cursor-not-allowed opacity-50" : ""
+            }`}
             onClick={() => setOpen(false)}
           >
             <Heart className="w-5 h-5 mr-2" />
@@ -62,7 +91,9 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
         <li>
           <Link
             href="/settings"
-            className="flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition"
+            className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
+              !user ? "cursor-not-allowed opacity-50" : ""
+            }`}
             onClick={() => setOpen(false)}
           >
             <FiSettings className="w-5 h-5 mr-2" />
@@ -70,15 +101,17 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
           </Link>
         </li>
 
-        <li>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition"
-          >
-            <FiLogOut className="w-5 h-5 mr-2" />
-            Logout
-          </button>
-        </li>
+        {user && (
+          <li>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition"
+            >
+              <FiLogOut className="w-5 h-5 mr-2" />
+              Logout
+            </button>
+          </li>
+        )}
       </ul>
     </div>
   );

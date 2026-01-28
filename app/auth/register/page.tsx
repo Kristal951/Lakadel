@@ -6,6 +6,7 @@ import useUserStore from "@/store/userStore";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -25,11 +26,16 @@ export default function Register() {
     e.preventDefault();
 
     try {
-      const res = await registerUser({
+      const result = await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
+
+       if (!result.success) {
+        showToast(result.message, "error");
+        return;
+      }
 
       showToast(`Welcome to Lakadel.`, "success");
       router.push("/shop");
@@ -56,6 +62,7 @@ export default function Register() {
         <form onSubmit={handleRegister} className="space-y-4">
           <button
             type="button"
+            onClick={() => signIn("google", { callbackUrl: "/shop" })}
             className="flex w-full items-center justify-center gap-3 px-4 py-3 border border-foreground/30  rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
           >
             <FcGoogle size={22} />
