@@ -1,26 +1,5 @@
 import { create } from "zustand";
-import { Product } from "./types";
-
-interface ProductState {
-  products: Product[];
-  loading: boolean;
-  error: string | null;
-  filters: {
-    sizes: string[];
-    categories: string[];
-  };
-  sortBy: "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc" | "newest" | null;
-  setProducts: (products: Product[]) => void;
-  addProduct: (product: Product) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  setSort: (sortBy: ProductState["sortBy"]) => void;
-
-  fetchProducts: () => Promise<void>;
-  getProductById: (id: string) => Product | undefined;
-  setFilter: (type: "sizes" | "categories", value: string[]) => void;
-  filteredProducts: () => Product[];
-}
+import { Product, ProductState } from "./types";
 
 const useProductStore = create<ProductState>((set, get) => ({
   products: [],
@@ -28,16 +7,18 @@ const useProductStore = create<ProductState>((set, get) => ({
   error: null,
   filters: { sizes: [], categories: [] },
   sortBy: null,
+  query: "",
 
+  setQuery: (q) => set({ query: q }),
   setProducts: (products) => set({ products }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
-  setSort: (sortBy: ProductState["sortBy"]) => set({ sortBy }),
+  setSort: (sortBy) => set({ sortBy }),
+  setFilter: (type, value) =>
+    set((state) => ({ filters: { ...state.filters, [type]: value } })),
 
   addProduct: (product) =>
-    set((state) => ({
-      products: [...state.products, product],
-    })),
+    set((state) => ({ products: [...state.products, product] })),
 
   fetchProducts: async () => {
     const { products } = get();
@@ -59,15 +40,11 @@ const useProductStore = create<ProductState>((set, get) => ({
 
   getProductById: (id: string) => get().products.find((p) => p.id === id),
 
-  setFilter: (type, value) =>
-    set((state) => ({
-      filters: { ...state.filters, [type]: value },
-    })),
-
-  filteredProducts: () => {
+  filteredAndSearchedProducts: () => {
     let products = [...get().products];
     const { sizes, categories } = get().filters;
-    const { sortBy } = get();
+    const { sortBy, query } = get();
+    const queryNumber = Number(query);
 
     if (sizes.length > 0) {
       products = products.filter((p) => p.sizes.some((s) => sizes.includes(s)));
@@ -77,6 +54,20 @@ const useProductStore = create<ProductState>((set, get) => ({
       products = products.filter((p) =>
         p.filters.some((f) => categories.includes(f)),
       );
+    }
+
+    if (query) {
+      const q = query.toLowerCase();
+
+      products = products.filter((p) => {
+        const matchText =
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q);
+
+        const matchPrice = p.price.toString().includes(query);
+
+        return matchText || matchPrice;
+      });
     }
 
     if (sortBy) {

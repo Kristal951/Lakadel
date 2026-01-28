@@ -44,7 +44,7 @@ export default function SortButton() {
       </button>
 
       {open && (
-        <ul className="absolute right-0 mt-2 top-6 w-max bg-white border border-gray-200 rounded-lg shadow-md z-50">
+        <ul className="absolute right-0 mt-2 top-6 w-max bg-background border border-gray-200 rounded-lg shadow-md z-50">
           {options.map((opt) => (
             <li
               key={opt.value}
@@ -52,7 +52,7 @@ export default function SortButton() {
                 setSort(opt.value as any);
                 setOpen(false);
               }}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-foreground"
+              className="px-4 py-2 hover:bg-foreground/20 cursor-pointer text-foreground"
             >
               {opt.label}
             </li>

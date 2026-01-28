@@ -5,6 +5,9 @@ import { CiHeart } from "react-icons/ci";
 import { IoBagOutline } from "react-icons/io5";
 import { FiArrowUpLeft } from "react-icons/fi";
 import { useToast } from "@/hooks/useToast";
+import useUserStore from "@/store/userStore";
+import { formatAmount, formatNGN, formatPrice } from "@/lib";
+import PriceContainer from "./PriceContainer";
 
 export default function ProductCard({
   id,
@@ -14,6 +17,7 @@ export default function ProductCard({
   quantity = 1,
   selectedSize,
   selectedColor,
+  description,
 }: {
   id: string;
   label: string;
@@ -22,9 +26,12 @@ export default function ProductCard({
   quantity: number;
   selectedSize: string;
   selectedColor: string;
+  description: string;
 }) {
   const { addToCart } = useCartStore();
   const { showToast } = useToast();
+  const { currencySymbol, currency } = useUserStore();
+  console.log(currency, price);
 
   const handleAddToCart = () => {
     const item = {
@@ -70,12 +77,11 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-base text-[#B10E0E] dark:text-white font-semibold tracking-wide">
+        <h3 className="text-base text-foreground font-semibold tracking-wide">
           {label}
         </h3>
-        <p className="text-base dark:text-white text-[#B10E0E]/80">
-          ${price.toLocaleString()}
-        </p>
+        <h2 className="text-base text-foreground/70">{description}</h2>
+        <PriceContainer price={price} currency={currency} />
       </div>
     </div>
   );

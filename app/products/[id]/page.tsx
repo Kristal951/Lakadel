@@ -6,6 +6,10 @@ import { IoBagOutline } from "react-icons/io5";
 import useProductStore from "@/store/productStore";
 import Spinner from "@/components/ui/spinner";
 import EmptyState from "@/components/ui/EmptyState";
+import useCartStore from "@/store/cartStore";
+import { useToast } from "@/hooks/useToast";
+import PriceContainer from "@/components/shop/PriceContainer";
+import useUserStore from "@/store/userStore";
 
 type ProductPageProps = {
   params: { id: string } | Promise<{ id: string }>;
@@ -14,10 +18,24 @@ type ProductPageProps = {
 export default function ProductPage({ params }: ProductPageProps) {
   const [id, setId] = useState<string | null>(null);
   const { fetchProducts, getProductById, loading, error } = useProductStore();
+  const { addToCart } = useCartStore();
+  const { showToast } = useToast();
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const { currency } = useUserStore();
+
+  const handleAddToCart = () => {
+    const item = {
+      id,
+      quantity: 1,
+      selectedSize: selectedSize,
+      selectedColor: selectedColor,
+    };
+    addToCart(item);
+    showToast("Item added to cart!", "success");
+  };
 
   useEffect(() => {
     (async () => {
@@ -43,23 +61,18 @@ export default function ProductPage({ params }: ProductPageProps) {
   useEffect(() => {
     if (product) {
       setSelectedImage(product.images?.[0] || null);
-      setSelectedColor(product.colors?.[0]?.hex || null);
+      setSelectedColor(product.colors?.[0]?.name || null);
     }
   }, [product]);
-
 
   if (loading || !product)
     return (
       <div className="w-full h-screen flex items-center justify-center">
-        <Spinner />
+        <Spinner w="10" h="10" />
       </div>
     );
 
-  if (error)
-    return (
-     <EmptyState text={error}/>
-    );
-
+  if (error) return <EmptyState text={error} />;
   return (
     <section className="max-w-6xl mx-auto py-10 px-4 grid grid-cols-1 md:grid-cols-2 gap-10">
       <div className="flex flex-col gap-8">
@@ -90,7 +103,12 @@ export default function ProductPage({ params }: ProductPageProps) {
                 }`}
                 onClick={() => setSelectedImage(img)}
               >
-                <Image src={img} alt={product.name} fill className="object-cover" />
+                <Image
+                  src={img}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                />
               </div>
             ))}
           </div>
@@ -103,7 +121,7 @@ export default function ProductPage({ params }: ProductPageProps) {
           <p className="opacity-70">{product.description}</p>
         </div>
 
-        <p className="text-xl font-medium">₦{product.price.toLocaleString()}</p>
+        <PriceContainer price={product.price} currency={currency} textSize="xl"/>
 
         {product.sizes?.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -135,11 +153,11 @@ export default function ProductPage({ params }: ProductPageProps) {
                   key={color.hex}
                   style={{ backgroundColor: color.hex }}
                   className={`w-8 h-8 rounded-full border-2 transition ${
-                    selectedColor === color.hex
+                    selectedColor === color.name
                       ? "border-(--accent,#B10E0E)"
                       : "border-transparent"
                   }`}
-                  onClick={() => setSelectedColor(color.hex)}
+                  onClick={() => setSelectedColor(color.name)}
                 />
               ))}
             </div>
@@ -147,6 +165,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         )}
 
         <button
+          onClick={handleAddToCart}
           disabled={!selectedSize}
           className="mt-6 py-3 flex items-center justify-center gap-2 rounded-full text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: "var(--accent,#B10E0E)" }}

@@ -1,5 +1,6 @@
 import Header from "@/components/shop/Header";
 import SidebarFilters from "@/components/shop/Sidebar";
+import TopBar from "@/components/shop/TopBar";
 import React from "react";
 
 export default function ShopLayout({
@@ -10,6 +11,8 @@ export default function ShopLayout({
   return (
     <div className="w-full flex flex-col min-h-screen">
       <div className="flex w-full flex-1">
+        <Header />
+        <TopBar />
         <SidebarFilters />
         <main className="flex-1 ml-[20%] mt-30 p-4 ">{children}</main>
       </div>

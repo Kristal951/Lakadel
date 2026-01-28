@@ -1,4 +1,4 @@
-
+import { formatPrice } from "@/lib";
 
 export default function PriceContainer({
   price,

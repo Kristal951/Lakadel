@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // import { useExchangeRateStore } from "@/store/exchangeRate";
+=======
+import { useExchangeRateStore } from "@/store/exchangeRate";
+>>>>>>> dd746f508477be80411571a1a7ce838bfc5a832b
 
 export const countries = [
   { code: "NG", name: "Nigeria", currency: "NGN", symbol: "₦" },
