@@ -1,6 +1,6 @@
 // app/layout.tsx (SERVER)
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Roboto, Lora } from "next/font/google";
 import "./globals.css";
 import Providers from "@/contexts/Providers";
 
@@ -19,6 +19,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const inter = Roboto({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
+});
+
+export const playfair = Lora({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: ["400", "500", "600", "700"],
+});
+
 export default function RootLayout({
   children,
 }: {
@@ -30,7 +42,7 @@ export default function RootLayout({
         <link rel="icon" href="/Lakadel.svg" type="image/svg+xml" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${playfair.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

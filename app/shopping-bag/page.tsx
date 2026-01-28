@@ -22,52 +22,63 @@ import PriceContainer from "@/components/shop/PriceContainer";
 
 export default function ShoppingBag() {
   const { items, removeFromCart, updateQuantity, clearCart } = useCartStore();
-  const { currency, currencySymbol } = useUserStore();
+  const { currency, user } = useUserStore();
   const { products } = useProductStore();
   const router = useRouter();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  const handleStripeCheckout = async () => {
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cartItems.map((item) => ({
-            id: item.id,
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-            image: item.product.images[0],
-          })),
-          currency,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Stripe checkout error:", error);
-    }
-  };
-
   const goToShop = () => router.push("/shop");
 
-  const cartItems = items
-    .map((cartItem) => {
-      const product = products.find((p) => p.id === cartItem.id);
-      if (!product) return null;
-      return { ...cartItem, product };
-    })
-    .filter((item): item is any => item !== null);
+const cartItems = items
+  .map((cartItem) => {
+    const product = products.find((p) => p.id === cartItem.id);
+    if (!product) return null;
+    return { ...cartItem, product };
+  })
+  .filter((item): item is any => item !== null);
 
-  const totalPrice = cartItems.reduce(
-    (sum, i) => sum + i.quantity * i.product.price,
-    0,
-  );
+const totalPrice = cartItems.reduce(
+  (sum, i) => sum + i.quantity * i.product.price,
+  0
+);
+
+const handlePaystackCheckout = async () => {
+  if(!user){
+    router.push('/shopping-bag/checkout/guest');
+  }
+  try {
+    const createRes = await fetch("/api/orders/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cartItems: cartItems.map((i) => ({
+          productId: i.product.id,
+          quantity: i.quantity,
+          price: i.product.price,
+        })),
+        total: totalPrice,
+        currency,
+      }),
+    });
+
+    const createData = await createRes.json();
+    if (!createRes.ok) throw new Error(createData.error || "Failed to create order");
+
+    const initRes = await fetch("/api/paystack/initialize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: createData.orderId }),
+    });
+
+    const initData = await initRes.json();
+    if (!initRes.ok) throw new Error(initData.error || "Failed to init Paystack");
+
+    window.location.href = initData.authorization_url;
+  } catch (error) {
+    console.error("Paystack checkout error:", error);
+  }
+};
+
 
   if (cartItems.length === 0) {
     return (
@@ -298,7 +309,7 @@ export default function ShoppingBag() {
             </div>
 
             <button
-              onClick={handleStripeCheckout}
+              onClick={handlePaystackCheckout}
               className="w-full bg-white text-black py-5 rounded-3xl font-bold flex items-center justify-center gap-2 hover:bg-neutral-100 transition-all duration-300 group active:scale-[0.98]"
             >
               Proceed to Checkout

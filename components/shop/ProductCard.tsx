@@ -77,7 +77,7 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-base text-foreground font-semibold tracking-wide">
+        <h3 className="text-base font-serif text-foreground font-bold tracking-wide">
           {label}
         </h3>
         <h2 className="text-base text-foreground/70">{description}</h2>

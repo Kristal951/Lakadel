@@ -8,6 +8,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
 enum AuthProvider {
   GOOGLE
   EMAIL
@@ -109,13 +115,24 @@ model CartItem {
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  user       User?       @relation(fields: [userId], references: [id])
-  userId     String?
-  total      Float
-  currency   String      @default("NGN")
-  createdAt  DateTime    @default(now())
-  orderItems OrderItem[]
+  id            String      @id @default(uuid())
+  user          User?       @relation(fields: [userId], references: [id])
+  userId        String?
+
+  customerEmail String
+  customerPhone String?
+  shippingAddress Json?
+
+  total         Float
+  totalKobo     Int
+  currency      String      @default("NGN")
+
+  status        OrderStatus @default(PENDING)
+  paymentRef    String?     @unique
+  paidAt        DateTime?
+
+  createdAt     DateTime    @default(now())
+  orderItems    OrderItem[]
 }
 
 model OrderItem {

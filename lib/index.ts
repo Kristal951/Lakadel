@@ -29,18 +29,35 @@ export function formatAmount(amount: number) {
   }).format(amount);
 }
 
-export function formatPrice(amountNGN: number, currency = "NGN") {
-  const rates = useExchangeRateStore.getState().rates;
-  const rate = rates[currency] ?? 1;
-  const converted = amountNGN * rate;
 
-  const formatted = new Intl.NumberFormat(undefined, {
+export function formatPrice(amountNGN: number, currency: string = "NGN") {
+  const rates = useExchangeRateStore.getState().rates ?? {};
+  const rate = rates[currency] ?? 1;
+
+  const converted = Number(amountNGN) * Number(rate);
+
+  // safety
+  if (!Number.isFinite(converted)) return "";
+
+  const nf = new Intl.NumberFormat(undefined, {
     style: "currency",
     currency,
     maximumFractionDigits: currency === "NGN" ? 0 : 2,
-  }).format(converted);
+  });
 
-  const symbol = formatted.replace(/\d.*$/, ""); 
-  const number = formatted.replace(symbol, "").trim(); 
-  return `${symbol} ${number}`;
+  const parts = nf.formatToParts(converted);
+
+  const symbol = parts
+    .filter((p) => p.type === "currency")
+    .map((p) => p.value)
+    .join("");
+
+  const number = parts
+    .filter((p) => p.type !== "currency")
+    .map((p) => p.value)
+    .join("")
+    .trim();
+
+  // If you always want "₦ 12,000" (symbol first), force it:
+  return `${symbol} ${number}`.trim();
 }
