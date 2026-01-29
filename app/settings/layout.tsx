@@ -8,7 +8,7 @@ export default function SettingsPageLayout({
   return (
     <div className="w-full h-full flex">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 mt-17.5">
         {children}
       </main>
     </div>

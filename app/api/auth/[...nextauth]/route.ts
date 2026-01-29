@@ -37,6 +37,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           currency: user.currency,
+          role: user.role,
         };
       },
     }),
@@ -45,19 +46,33 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = (user as any).id;
-        token.currency = (user as any).currency ?? "NGN";
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      (session.user as any).id = token.id;
-      (session.user as any).currency = token.currency ?? "NGN";
-      return session;
-    },
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = (user as any).id;
+      token.currency = (user as any).currency ?? "NGN";
+      token.role = (user as any).role ?? "USER";
+    }
+
+    if (!token.role && token.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: token.email as string },
+        select: { role: true, currency: true },
+      });
+      token.role = dbUser?.role ?? "USER";
+      token.currency = token.currency ?? dbUser?.currency ?? "NGN";
+    }
+
+    return token;
   },
+
+  async session({ session, token }) {
+    (session.user as any).id = token.id;
+    (session.user as any).currency = token.currency ?? "NGN";
+    (session.user as any).role = token.role ?? "USER";
+
+    return session;
+  },
+},
 
   pages: {
     signIn: "/auth/login",

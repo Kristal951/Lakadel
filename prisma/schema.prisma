@@ -19,6 +19,11 @@ enum AuthProvider {
   EMAIL
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id            String       @id @default(uuid())
   email         String?      @unique
@@ -30,6 +35,7 @@ model User {
   isGuest       Boolean      @default(false)
   authProvider  AuthProvider @default(EMAIL)
   currency      String       @default("NGN")
+  role          Role         @default(USER) // ✅ add this
 
   shippingAddress Json?
   phone           String?

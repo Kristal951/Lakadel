@@ -11,8 +11,11 @@ import {
   IoLockClosedOutline,
   IoInformationCircleOutline,
 } from "react-icons/io5";
+import PhoneInput, {
+  isValidPhoneNumber,
+  formatPhoneNumberIntl,
+} from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import PhoneInput from "react-phone-number-input";
 
 // ... [Keep NIGERIA_STATES, Product, CartItem, CartLine, formatMoney, isValidEmail as they were] ...
 
@@ -32,6 +35,8 @@ type ShippingInfo = {
   state: string; // Now string to allow flexibility
   country: (typeof COUNTRIES)[number];
 };
+
+type PaymentMethod = "PAYSTACK" | "STRIPE";
 
 export default function GuestCheckoutPage() {
   const router = useRouter();
@@ -69,7 +74,24 @@ export default function GuestCheckoutPage() {
   }, [cartItems.length, router]);
 
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState<string | undefined>(undefined); // Fixed type
+  const [phone, setPhone] = useState<string | undefined>(undefined);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() =>
+    currency === "NGN" ? "PAYSTACK" : "STRIPE",
+  );
+
+  const phoneOk = useMemo(() => {
+    if (!phone) return false;
+    return isValidPhoneNumber(phone);
+  }, [phone]);
+
+  useEffect(() => {
+    setPaymentMethod(currency === "NGN" ? "PAYSTACK" : "STRIPE");
+  }, [currency]);
+
+  const recommendedMethod: PaymentMethod =
+    currency === "NGN" ? "PAYSTACK" : "STRIPE";
+
   const [shipping, setShipping] = useState<ShippingInfo>({
     fullName: "",
     address1: "",
@@ -158,9 +180,9 @@ export default function GuestCheckoutPage() {
       shipping.address1.trim() &&
       shipping.city.trim() &&
       isValidEmail(email) &&
-      phone?.length >= 8
+      phoneOk
     );
-  }, [shipping, email, phone]);
+  }, [shipping, email, phoneOk]);
 
   const handleGuestPay = async () => {
     setError("");
@@ -228,23 +250,43 @@ export default function GuestCheckoutPage() {
                     <label className="text-xs font-semibold uppercase tracking-wide text-foreground/50 group-focus-within:text-foreground transition-colors">
                       Phone Number
                     </label>
+
                     <PhoneInput
-                      placeholder="Your Phone Number"
                       value={phone}
-                      onChange={setPhone}
-                      defaultCountry="NG" 
+                      onChange={(v) => {
+                        setPhone(v);
+                        if (!phoneTouched) setPhoneTouched(true);
+                      }}
+                      onBlur={() => setPhoneTouched(true)}
+                      defaultCountry="NG"
                       international
-                      countryCallingCodeEditable
-                      className="bg-transparent border-b border-foreground/20 py-3 text-sm focus-within:border-foreground outline-none transition-colors"
-                      inputComponent={({ value, onChange, ...props }: any) => (
-                        <input
-                          {...props}
-                          value={value}
-                          onChange={onChange}
-                          className="bg-transparent outline-none placeholder:text-foreground/20"
-                        />
-                      )}
+                      countryCallingCodeEditable={false}
+                      className={[
+                        "border-b py-3 text-sm transition-colors",
+                        "bg-transparent outline-none",
+                        phoneTouched && !phoneOk
+                          ? "border-red-500"
+                          : "border-foreground/20",
+                        "focus-within:border-foreground",
+                      ].join(" ")}
+                      numberInputProps={{
+                        className:
+                          "bg-transparent outline-none placeholder:text-foreground/20 w-full",
+                        placeholder: "e.g. 0801 234 5678",
+                      }}
                     />
+
+                    {phoneTouched && !phoneOk && (
+                      <span className="text-xs text-red-600">
+                        Please enter a valid phone number.
+                      </span>
+                    )}
+
+                    {phoneOk && phone && (
+                      <span className="text-xs text-foreground/40">
+                        {formatPhoneNumberIntl(phone)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </section>
@@ -263,7 +305,9 @@ export default function GuestCheckoutPage() {
                   <ModernInput
                     label="Full Name"
                     value={shipping.fullName}
-                    onChange={(v: any) => setShipping({ ...shipping, fullName: v })}
+                    onChange={(v: any) =>
+                      setShipping({ ...shipping, fullName: v })
+                    }
                   />
 
                   <div className="grid md:grid-cols-2 gap-6">
@@ -292,7 +336,9 @@ export default function GuestCheckoutPage() {
                     <ModernInput
                       label="City"
                       value={shipping.city}
-                      onChange={(v: any) => setShipping({ ...shipping, city: v })}
+                      onChange={(v: any) =>
+                        setShipping({ ...shipping, city: v })
+                      }
                     />
                   </div>
 
@@ -332,8 +378,144 @@ export default function GuestCheckoutPage() {
                   <ModernInput
                     label="Landmark (Optional)"
                     value={shipping.landmark}
-                    onChange={(v: any) => setShipping({ ...shipping, landmark: v })}
+                    onChange={(v: any) =>
+                      setShipping({ ...shipping, landmark: v })
+                    }
                   />
+                </div>
+              </section>
+
+              {/* SECTION 03 */}
+              <section>
+                <div className="flex items-center gap-4 mb-8">
+                  <span className="text-xs font-bold w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center">
+                    3
+                  </span>
+                  <h2 className="text-xs font-bold uppercase tracking-wide text-foreground">
+                    Payment Method
+                  </h2>
+                </div>
+
+                <p className="text-sm text-foreground/60 leading-relaxed mb-6">
+                  {recommendedMethod === "STRIPE" ? (
+                    <>
+                      <span className="font-semibold text-foreground">
+                        Recommended:
+                      </span>{" "}
+                      <span className="font-semibold">Stripe</span> — better for
+                      paying in{" "}
+                      <span className="font-semibold">foreign currencies</span>{" "}
+                      (USD, EUR, GBP, etc.).
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-foreground">
+                        Recommended:
+                      </span>{" "}
+                      <span className="font-semibold">Paystack</span> — best for{" "}
+                      <span className="font-semibold">NGN</span> payments in
+                      Nigeria.
+                    </>
+                  )}
+                </p>
+
+                <div className="space-y-4">
+                  {/* PAYSTACK ROW */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("PAYSTACK")}
+                    className={[
+                      "w-full flex items-start justify-between gap-4 rounded-2xl border p-5 transition-all text-left",
+                      paymentMethod === "PAYSTACK"
+                        ? "border-foreground bg-foreground/5"
+                        : "border-foreground/10 hover:border-foreground/30",
+                    ].join(" ")}
+                  >
+                    <div className="flex gap-4">
+                      <div
+                        className={[
+                          "mt-1 w-4 h-4 rounded-full border flex items-center justify-center",
+                          paymentMethod === "PAYSTACK"
+                            ? "border-foreground"
+                            : "border-foreground/30",
+                        ].join(" ")}
+                      >
+                        {paymentMethod === "PAYSTACK" && (
+                          <div className="w-2 h-2 rounded-full bg-foreground" />
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-bold">Paystack</p>
+                        <p className="text-xs text-foreground/60 mt-1">
+                          Best for NGN • Local cards • Bank transfer/USSD
+                        </p>
+
+                        <ul className="mt-3 text-xs text-foreground/60 space-y-1">
+                          <li>✅ Very smooth for Nigerian customers</li>
+                          <li>✅ Often fewer failed local payments</li>
+                          <li>⚠️ Limited multi-currency support</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {recommendedMethod === "PAYSTACK" && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-foreground text-background h-fit">
+                        Recommended
+                      </span>
+                    )}
+                  </button>
+
+                  {/* STRIPE ROW */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("STRIPE")}
+                    className={[
+                      "w-full flex items-start justify-between gap-4 rounded-2xl border p-5 transition-all text-left",
+                      paymentMethod === "STRIPE"
+                        ? "border-foreground bg-foreground/5"
+                        : "border-foreground/10 hover:border-foreground/30",
+                    ].join(" ")}
+                  >
+                    <div className="flex gap-4">
+                      <div
+                        className={[
+                          "mt-1 w-4 h-4 rounded-full border flex items-center justify-center",
+                          paymentMethod === "STRIPE"
+                            ? "border-foreground"
+                            : "border-foreground/30",
+                        ].join(" ")}
+                      >
+                        {paymentMethod === "STRIPE" && (
+                          <div className="w-2 h-2 rounded-full bg-foreground" />
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-bold">Stripe</p>
+                        <p className="text-xs text-foreground/60 mt-1">
+                          Best for USD/EUR/GBP • Global cards • True
+                          multi-currency
+                        </p>
+
+                        <ul className="mt-3 text-xs text-foreground/60 space-y-1">
+                          <li>✅ Strong international card acceptance</li>
+                          <li>
+                            ✅ Great multi-currency + receipts/disputes tools
+                          </li>
+                          <li>
+                            ⚠️ For NGN-only customers, Paystack may feel simpler
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {recommendedMethod === "STRIPE" && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-foreground text-background h-fit">
+                        Recommended
+                      </span>
+                    )}
+                  </button>
                 </div>
               </section>
 

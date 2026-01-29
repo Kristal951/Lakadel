@@ -5,11 +5,13 @@ import { paystackInitialize } from "@/lib/paystack";
 export async function POST(req: Request) {
   try {
     const { orderId } = await req.json();
+    console.log(orderId)
     if (!orderId) {
       return NextResponse.json({ error: "orderId required" }, { status: 400 });
     }
 
     const order = await prisma.order.findUnique({ where: { id: orderId } });
+    console.log(order)
     if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
     if (order.status === "PAID") {

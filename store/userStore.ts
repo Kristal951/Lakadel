@@ -86,7 +86,7 @@ const useUserStore = create<UserState>((set) => ({
     try {
       set({ loading: true, error: null });
 
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/users/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

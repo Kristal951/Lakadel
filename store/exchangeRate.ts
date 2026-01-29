@@ -9,7 +9,7 @@ export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
   fetchRates: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch("/api/exchange-rates");
+      const res = await fetch("/api/users/exchange-rates");
       const data = await res.json();
       set({ rates: data, loading: false });
     } catch (err: any) {

@@ -43,11 +43,13 @@ const totalPrice = cartItems.reduce(
 );
 
 const handlePaystackCheckout = async () => {
-  if(!user){
-    router.push('/shopping-bag/checkout/guest');
+  if (!user) {
+    router.push("/shopping-bag/checkout/guest");
+    return; // ✅ stop here
   }
+
   try {
-    const createRes = await fetch("/api/orders/create", {
+    const createRes = await fetch("/api/users/orders/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -58,13 +60,15 @@ const handlePaystackCheckout = async () => {
         })),
         total: totalPrice,
         currency,
+        email: user.email, 
+        userId: user.id,   
       }),
     });
 
     const createData = await createRes.json();
     if (!createRes.ok) throw new Error(createData.error || "Failed to create order");
 
-    const initRes = await fetch("/api/paystack/initialize", {
+    const initRes = await fetch("/api/users/paystack/initialise", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId: createData.orderId }),
@@ -76,6 +80,7 @@ const handlePaystackCheckout = async () => {
     window.location.href = initData.authorization_url;
   } catch (error) {
     console.error("Paystack checkout error:", error);
+    // optionally show toast
   }
 };
 

@@ -28,7 +28,7 @@ html {
 
 .dark {
   --background: #0a0a0a;
-  --foreground: #ededed;
+  --foreground: #ffffff;
   --hover: rgba(255, 255, 255, 0.18);
   --accent: #0a0a0a;
 }
