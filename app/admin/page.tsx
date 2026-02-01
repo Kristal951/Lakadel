@@ -144,7 +144,7 @@ export default async function AdminDashboardPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {recentOrders.map((o) => {
+              {recentOrders.map((o: any) => {
                 const itemsCount = o.orderItems.reduce(
                   (sum, it) => sum + it.quantity,
                   0,
