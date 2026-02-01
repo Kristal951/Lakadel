@@ -1,6 +1,7 @@
+import { User } from "@/store/types";
 import { FiTrash2, FiAlertTriangle, FiArchive, FiShieldOff, FiInfo } from "react-icons/fi";
 
-export default function DangerZone() {
+export default function DangerZone({ user }: { user: User | null }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       

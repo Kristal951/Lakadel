@@ -1,5 +1,6 @@
 import { FiMail, FiBell, FiSmartphone, FiCheck, FiInfo } from "react-icons/fi";
 import { ChannelCard } from "./ChannelCard";
+import { User } from "@/store/types";
 
 const notificationGroups = [
   {
@@ -20,7 +21,7 @@ const notificationGroups = [
   },
 ];
 
-export default function NotificationsTab() {
+export default function NotificationsTab({ user }: { user: User | null }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       

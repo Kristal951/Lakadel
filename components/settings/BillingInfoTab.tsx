@@ -4,8 +4,9 @@ import React from "react";
 import { FiCreditCard, FiMapPin, FiPhone, FiGlobe, FiPlus } from "react-icons/fi";
 import BillingInput from "./BillingInput";
 import { useSettingsDraftStore } from "@/store/settingsDraftStore";
+import { User } from "@/store/types";
 
-export default function BillingInfoTab() {
+export default function BillingInfoTab({ user }: { user: User | null }) {
   const { draft, setShippingField } = useSettingsDraftStore();
 
   const addr = draft.shippingAddress;

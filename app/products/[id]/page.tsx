@@ -10,6 +10,7 @@ import useCartStore from "@/store/cartStore";
 import { useToast } from "@/hooks/useToast";
 import PriceContainer from "@/components/shop/PriceContainer";
 import useUserStore from "@/store/userStore";
+import { CartItem } from "@/store/types";
 
 type ProductPageProps = {
   params: { id: string } | Promise<{ id: string }>;
@@ -22,16 +23,16 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { showToast } = useToast();
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>("");
+  const [selectedColor, setSelectedColor] = useState<string | null>("");
   const { currency } = useUserStore();
 
   const handleAddToCart = () => {
-    const item = {
-      id,
+    const item: CartItem = {
+      id: product.id,
       quantity: 1,
-      selectedSize: selectedSize,
-      selectedColor: selectedColor,
+      selectedSize,
+      selectedColor,
     };
     addToCart(item);
     showToast("Item added to cart!", "success");
@@ -121,7 +122,11 @@ export default function ProductPage({ params }: ProductPageProps) {
           <p className="opacity-70">{product.description}</p>
         </div>
 
-        <PriceContainer price={product.price} currency={currency} textSize="xl"/>
+        <PriceContainer
+          price={product.price}
+          currency={currency}
+          textSize="xl"
+        />
 
         {product.sizes?.length > 0 && (
           <div className="flex flex-col gap-2">

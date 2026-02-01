@@ -17,7 +17,7 @@ export default function SelectionBar({ iconObject }: SelectionBarProps) {
       {iconObject.map((item, index) => (
         <div key={index} className="flex flex-col items-center justify-center ">
           <button
-            onClick={() => setSelected(item.label)}
+            onClick={() => setSelected(item.label ?? "")}
             className={`text-2xl cursor-pointer 
                      transition-colors duration-200 hover:bg-[#B10E0E]/10 ${item.label === selected ? "bg-[#B10E0E] text-white" : "text-[#B10E0E]"} p-4 border-[#B10E0E] border rounded-full`}
           >

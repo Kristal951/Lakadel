@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import type { Prisma } from "@prisma/client";
 
 type MergeItem = {
   productId: string;
@@ -33,16 +34,19 @@ export async function POST(req: Request) {
       .reduce((acc, cur) => {
         const k = `${cur.productId}::${cur.selectedColor ?? ""}::${cur.selectedSize ?? ""}`;
         const prev = acc.get(k);
-        acc.set(k, prev ? { ...prev, quantity: prev.quantity + cur.quantity } : cur);
+        acc.set(
+          k,
+          prev ? { ...prev, quantity: prev.quantity + cur.quantity } : cur,
+        );
         return acc;
       }, new Map<string, { productId: string; quantity: number; selectedColor: string | null; selectedSize: string | null }>())
-      .values()
+      .values(),
   );
 
   const now = new Date();
 
   const cart = await prisma.$transaction(
-    async (tx: any) => {
+    async (tx: Prisma.TransactionClient) => {
       const cartRow = await tx.cart.upsert({
         where: { userId },
         create: { userId, createdAt: now, updatedAt: now },
@@ -53,7 +57,7 @@ export async function POST(req: Request) {
       if (cleanArr.length) {
         // (Optional) validate product IDs - keep if you need FK safety
         const productIds = [...new Set(cleanArr.map((i) => i.productId))];
-        const existingProducts = await tx.product.findMany({
+        const existingProducts: { id: string }[] = await tx.product.findMany({
           where: { id: { in: productIds } },
           select: { id: true },
         });
@@ -67,8 +71,8 @@ export async function POST(req: Request) {
                 cartId: cartRow.id,
                 productId: item.productId,
                 // IMPORTANT: use nulls consistently (NOT '')
-                selectedColor: item.selectedColor || null,
-                selectedSize: item.selectedSize || null,
+                selectedColor: item.selectedColor ?? "",
+                selectedSize: item.selectedSize ?? "",
               },
             },
             create: {
@@ -103,9 +107,9 @@ export async function POST(req: Request) {
       });
     },
     {
-      maxWait: 10_000, 
-      timeout: 20_000, 
-    }
+      maxWait: 10_000,
+      timeout: 20_000,
+    },
   );
 
   return NextResponse.json({ cart });

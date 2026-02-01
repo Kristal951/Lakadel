@@ -29,10 +29,7 @@ const useUserStore = create<UserState>((set) => ({
   setUser: (user) => set({ user, isAuthenticated: true, loading: false }),
 
   setCurrency: (currency: string) => {
-    const symbol =
-      Object.values(countryCurrencyMap).find((c) => c.code === currency)
-        ?.symbol || "$";
-    set({ currency, currencySymbol: symbol });
+    set({ currency });
   },
 
   setCountry: (countryCode: string) => {

@@ -1,5 +1,5 @@
-import { ShippingAddress } from "@stripe/stripe-js";
 import { create } from "zustand";
+import { ShippingAddress } from "./types";
 
 type SettingsDraft = {
   name?: string;

@@ -13,8 +13,8 @@ export interface Product {
 export interface CartItem {
   id: string;
   quantity: number;
-  selectedSize?: string;
-  selectedColor?: string;
+  selectedSize?: string | null;
+  selectedColor?: string | null;
 }
 
 export interface ShippingAddress {
@@ -113,7 +113,7 @@ export interface UserState {
   currencySymbol: string;
 
   setUser: (user: User) => void;
-  setCurrency: (currency: string, symbol: string) => void;
+  setCurrency: (currency: string) => void;
   setCountry: (country: string) => void;
   logout: () => void;
   registerUser: (data: {

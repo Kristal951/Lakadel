@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import useUserStore from "@/store/userStore";
 import { countries } from "@/lib";
+import { User } from "@/store/types";
 
 type ThemeMode = "light" | "dark" | "system";
 type AccentId = "indigo" | "rose" | "emerald" | "amber" | "slate";
@@ -27,7 +28,7 @@ const ACCENTS: { id: AccentId; bg: string; hex: string }[] = [
   { id: "slate", bg: "bg-slate-900", hex: "#0f172a" },
 ];
 
-export default function AppearanceTab() {
+export default function AppearanceTab({ user }: { user: User | null }) {
   const { currency, setCurrency } = useUserStore();
 
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -233,7 +234,7 @@ export default function AppearanceTab() {
                     const code = e.target.value;
                     const selected = countries.find((c) => c.currency === code);
                     if (!selected) return;
-                    setCurrency(selected.currency, selected.symbol);
+                    setCurrency(selected.currency);
                   }}
                   className="w-full appearance-none bg-foreground/5 border border-foreground/10 rounded-2xl px-5 py-4 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-[color:var(--accent)]/20 focus:border-[color:var(--accent)] transition-all cursor-pointer"
                 >
