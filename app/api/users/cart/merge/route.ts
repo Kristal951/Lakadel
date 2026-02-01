@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { Prisma } from "@prisma/client";
+import { authOptions } from "@/lib/authOptions";
 
 type MergeItem = {
   productId: string;

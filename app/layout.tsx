@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const inter = Roboto({
+const inter = Roboto({
   subsets: ["latin"],
   variable: "--font-sans",
   weight: ["400", "500", "600", "700"],
 });
 
-export const playfair = Lora({
+const playfair = Lora({
   subsets: ["latin"],
   variable: "--font-serif",
   weight: ["400", "500", "600", "700"],
