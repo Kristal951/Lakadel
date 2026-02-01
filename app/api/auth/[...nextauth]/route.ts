@@ -1,20 +1,66 @@
+// app/api/auth/[...nextauth]/route.ts
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid"; // ✅ ADD
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // allowDangerousEmailAccountLinking: true,
     }),
 
+    // ✅ ADD THIS PROVIDER (Guest)
     CredentialsProvider({
+      id: "guest",
+      name: "Guest",
+      credentials: {},
+      async authorize() {
+        const guestID = uuidv4();
+
+        const guest = await prisma.user.create({
+          data: {
+            isGuest: true,
+            guestID,
+            authProvider: "EMAIL", // or keep EMAIL since it's not google
+            currency: "NGN",
+            role: "USER",
+          },
+          select: {
+            id: true,
+            guestID: true,
+            isGuest: true,
+            currency: true,
+            role: true,
+            image: true,
+            email: true,
+            name: true,
+          },
+        });
+
+        // NextAuth needs at least id
+        return {
+          id: guest.id,
+          guestID: guest.guestID,
+          isGuest: guest.isGuest,
+          currency: guest.currency,
+          role: guest.role,
+          image: guest.image,
+          email: guest.email,
+          name: guest.name,
+        } as any;
+      },
+    }),
+
+    // Your existing credentials provider (keep it)
+    CredentialsProvider({
+      id: "credentials",
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -38,41 +84,100 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           currency: user.currency,
           role: user.role,
-        };
+          image: user.image,
+          isGuest: user.isGuest,
+          guestID: user.guestID,
+        } as any;
       },
     }),
   ],
 
   session: { strategy: "jwt" },
 
+  events: {
+    async createUser({ user }) {
+      if (!user?.email) return;
+
+      try {
+        await prisma.user.update({
+          where: { email: user.email },
+          data: {
+            image: user.image ?? null,
+            name: user.name ?? undefined,
+            authProvider: "GOOGLE",
+          },
+        });
+      } catch (e) {
+        console.error("events.createUser persist google image failed:", e);
+      }
+    },
+  },
+
   callbacks: {
-  async jwt({ token, user }) {
-    if (user) {
-      token.id = (user as any).id;
-      token.currency = (user as any).currency ?? "NGN";
-      token.role = (user as any).role ?? "USER";
-    }
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = (user as any).id;
+        token.currency = (user as any).currency ?? "NGN";
+        token.role = (user as any).role ?? "USER";
+        token.image = (user as any).image ?? null;
 
-    if (!token.role && token.email) {
-      const dbUser = await prisma.user.findUnique({
-        where: { email: token.email as string },
-        select: { role: true, currency: true },
-      });
-      token.role = dbUser?.role ?? "USER";
-      token.currency = token.currency ?? dbUser?.currency ?? "NGN";
-    }
+        // ✅ ADD
+        token.isGuest = (user as any).isGuest ?? false;
+        token.guestID = (user as any).guestID ?? null;
+      }
 
-    return token;
+      // If anything is missing, pull fresh data from DB
+      if (
+        token.email &&
+        (
+          token.id == null ||
+          token.role == null ||
+          token.currency == null ||
+          token.image === undefined ||
+          token.isGuest === undefined ||
+          token.guestID === undefined
+        )
+      ) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { id: true, role: true, currency: true, image: true, isGuest: true, guestID: true },
+        });
+
+        if (dbUser) {
+          token.id = token.id ?? dbUser.id;
+          token.role = token.role ?? dbUser.role ?? "USER";
+          token.currency = token.currency ?? dbUser.currency ?? "NGN";
+          token.image = token.image ?? dbUser.image ?? null;
+
+          // ✅ ADD
+          token.isGuest = token.isGuest ?? dbUser.isGuest ?? false;
+          token.guestID = token.guestID ?? dbUser.guestID ?? null;
+        } else {
+          token.role = token.role ?? "USER";
+          token.currency = token.currency ?? "NGN";
+          token.image = token.image ?? null;
+
+          // ✅ ADD
+          token.isGuest = token.isGuest ?? false;
+          token.guestID = token.guestID ?? null;
+        }
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      (session.user as any).id = token.id;
+      (session.user as any).currency = token.currency ?? "NGN";
+      (session.user as any).role = token.role ?? "USER";
+      (session.user as any).image = token.image ?? null;
+
+      (session.user as any).isGuest = (token as any).isGuest ?? false;
+      (session.user as any).guestID = (token as any).guestID ?? null;
+
+      return session;
+    },
   },
-
-  async session({ session, token }) {
-    (session.user as any).id = token.id;
-    (session.user as any).currency = token.currency ?? "NGN";
-    (session.user as any).role = token.role ?? "USER";
-
-    return session;
-  },
-},
 
   pages: {
     signIn: "/auth/login",

@@ -1,27 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ThemeSwitcherWrapper from "@/components/ui/ThemeSwitcherWrapper";
 import { ToastProvider } from "@/hooks/useToast";
-import { useExchangeRateStore } from "@/store/exchangeRate";
 import { SessionProvider } from "next-auth/react";
 import SessionSync from "./SessionSync";
+import CartSyncOnLogin from "./CartSyncOnLogin";
+import CartDebouncedSync from "./CartDebouncedSync";
+import ExchangeRateBootstrap from "./ExchangeRateBootstrap";
+import StoreInitializer from "./StoreInitialiser";
+import ClientInit from "./ClientInit";
+
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const fetchRates = useExchangeRateStore((s) => s.fetchRates);
-
-  useEffect(() => {
-    fetchRates();
-  }, [fetchRates]);
-
   return (
     <SessionProvider>
       <ToastProvider>
-        <ThemeProvider>
+        {/* <ThemeProvider> */}
+          <StoreInitializer />
+          <ClientInit/>
           <SessionSync />
+          <CartSyncOnLogin />
+          <CartDebouncedSync />
+
           {children}
-          <ThemeSwitcherWrapper />
-        </ThemeProvider>
+        {/* </ThemeProvider> */}
       </ToastProvider>
     </SessionProvider>
   );

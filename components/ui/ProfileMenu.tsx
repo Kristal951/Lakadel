@@ -8,6 +8,7 @@ import { useRef, useEffect } from "react";
 import { FiSettings, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import useCartStore from "@/store/cartStore";
 
 interface ProfileMenuProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -37,12 +38,13 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
 
   const handleLogout = async () => {
     setOpen(false);
+    const cartStore = useCartStore.getState();
+    cartStore.clearCart();
+    useCartStore.persist.clearStorage();
     await signOut({ redirect: false });
     logout();
-    resetRates();
     router.push("/auth/login");
   };
-
   const handleLoginRedirect = () => {
     setOpen(false);
     router.push("/auth/login");
@@ -56,7 +58,9 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
       <div className="px-4 py-2 border-b border-foreground/10 mb-1">
         {user ? (
           <div className="flex flex-col">
-            <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
+            <p className="text-sm font-semibold text-foreground truncate">
+              {user.name}
+            </p>
             <p className="text-xs text-foreground/50 truncate">
               {currencySymbol} {currency}
             </p>
@@ -79,7 +83,7 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
       <ul className="flex flex-col">
         <li>
           <Link
-            href="/wishlist"
+            href={user ? "/wishlist" : ''}
             className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
               !user ? "cursor-not-allowed opacity-50" : ""
             }`}
@@ -92,7 +96,7 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
 
         <li>
           <Link
-            href="/settings"
+            href={user ? "/settings" : ''}
             className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
               !user ? "cursor-not-allowed opacity-50" : ""
             }`}

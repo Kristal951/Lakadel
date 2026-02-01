@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,44 +6,27 @@ datasource db {
   provider = "postgresql"
 }
 
-enum OrderStatus {
-  PENDING
-  PAID
-  FAILED
-}
-
-enum AuthProvider {
-  GOOGLE
-  EMAIL
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-
 model User {
-  id            String       @id @default(uuid())
-  email         String?      @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-
-  password      String?
-  isGuest       Boolean      @default(false)
-  authProvider  AuthProvider @default(EMAIL)
-  currency      String       @default("NGN")
-  role          Role         @default(USER) // ✅ add this
-
-  shippingAddress Json?
+  id              String       @id @default(uuid())
+  email           String?      @unique
+  name            String?
+  password        String?
+  isGuest         Boolean      @default(false)
+  guestID         String?      @unique   // ✅ add @unique
+  authProvider    AuthProvider @default(EMAIL)
+  createdAt       DateTime     @default(now())
+  currency        String       @default("NGN")
+  emailVerified   DateTime?
+  image           String?
   phone           String?
-  createdAt      DateTime     @default(now())
+  shippingAddress Json?
+  role            Role         @default(USER)
+  accounts        Account[]
+  cart            Cart?
+  orders          Order[]
+  sessions        Session[]
 
-  accounts       Account[]
-  sessions       Session[]
-
-  cart           Cart?
-  orders         Order[]
+  @@index([guestID]) // optional but helpful
 }
 
 model Account {
@@ -61,8 +42,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -73,8 +53,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -92,61 +71,80 @@ model Product {
   name        String
   description String
   price       Int
-  images      String[]    @db.Text
-  colors      Json
-  sizes       String[]
   filters     String[]
+  sizes       String[]
   createdAt   DateTime    @default(now())
+  images      String[]
   updatedAt   DateTime    @updatedAt
+  colors      Json
+  totalStock  String      @default("0")
   cartItems   CartItem[]
   orderItems  OrderItem[]
 }
 
 model Cart {
-  id     String     @id @default(uuid())
-  user   User       @relation(fields: [userId], references: [id])
-  userId String     @unique
-  items  CartItem[]
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
 }
 
 model CartItem {
-  id        String  @id @default(uuid())
-  cart      Cart    @relation(fields: [cartId], references: [id])
-  cartId    String
-  product   Product @relation(fields: [productId], references: [id])
-  productId String
-  quantity  Int     @default(1)
+  id            String   @id @default(uuid())
+  cartId        String
+  productId     String
+  quantity      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  selectedColor String?
+  selectedSize  String?
+  cart          Cart     @relation(fields: [cartId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, selectedColor, selectedSize])
 }
 
 model Order {
-  id            String      @id @default(uuid())
-  user          User?       @relation(fields: [userId], references: [id])
-  userId        String?
-
-  customerEmail String
-  customerPhone String?
+  id              String      @id @default(uuid())
+  userId          String?
+  total           Float
+  createdAt       DateTime    @default(now())
+  currency        String      @default("NGN")
+  paidAt          DateTime?
+  paymentRef      String?     @unique
+  status          OrderStatus @default(PENDING)
+  totalKobo       Int
+  customerEmail   String
+  customerPhone   String?
   shippingAddress Json?
-
-  total         Float
-  totalKobo     Int
-  currency      String      @default("NGN")
-
-  status        OrderStatus @default(PENDING)
-  paymentRef    String?     @unique
-  paidAt        DateTime?
-
-  createdAt     DateTime    @default(now())
-  orderItems    OrderItem[]
+  user            User?       @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
 }
 
 model OrderItem {
   id        String  @id @default(uuid())
-  order     Order   @relation(fields: [orderId], references: [id])
   orderId   String
-  product   Product @relation(fields: [productId], references: [id])
   productId String
   quantity  Int     @default(1)
   price     Float
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum AuthProvider {
+  GOOGLE
+  EMAIL
+}
+
+enum Role {
+  USER
+  ADMIN
 }

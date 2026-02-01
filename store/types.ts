@@ -17,6 +17,18 @@ export interface CartItem {
   selectedColor?: string;
 }
 
+export interface ShippingAddress {
+  fullName: string;
+  streetAddress: string;
+  phone?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isDefault?: boolean;
+  landMark?: string;
+};
+
 export interface CartState {
   items: CartItem[];
 
@@ -65,6 +77,7 @@ export interface User {
   authProvider: "GOOGLE" | "EMAIL";
   isGuest: boolean;
   currency: string;
+  image?: string;
 
   cart: {
     productId: string;
@@ -76,12 +89,14 @@ export interface User {
   orders: string[];
 
   shippingAddress?: {
-    line1: string;
-    line2?: string;
+    fullName: string;
+    streetAddress: string;
+    phone?: string;
     city: string;
     state: string;
     postalCode: string;
     country: string;
+    isDefault: boolean;
   };
   phone?: string;
 
@@ -95,10 +110,10 @@ export interface UserState {
   error?: string | null;
   currency: string;
   country: string;
-  currencySymbol: string
+  currencySymbol: string;
 
   setUser: (user: User) => void;
-  setCurrency: (currency: string, symbol:string) => void;
+  setCurrency: (currency: string, symbol: string) => void;
   setCountry: (country: string) => void;
   logout: () => void;
   registerUser: (data: {
@@ -106,7 +121,10 @@ export interface UserState {
     email: string;
     password: string;
   }) => User | null | Promise<any>;
-  loginUser: (data: { email: string; password: string }) => User | null | Promise<any>;
+  loginUser: (data: {
+    email: string;
+    password: string;
+  }) => User | null | Promise<any>;
 }
 
 export interface ExchangeRateState {
@@ -115,4 +133,5 @@ export interface ExchangeRateState {
   error: string | null;
   fetchRates: () => Promise<void>;
   resetRates: () => void;
+  lastFetched: number;
 }

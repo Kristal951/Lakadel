@@ -16,25 +16,12 @@ import PhoneInput, {
   formatPhoneNumberIntl,
 } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { countries } from "@/lib";
+import { CartItem, Product, ShippingAddress } from "@/store/types";
+import { Images } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
 
 // ... [Keep NIGERIA_STATES, Product, CartItem, CartLine, formatMoney, isValidEmail as they were] ...
-
-const COUNTRIES = [
-  "Nigeria",
-  "Ghana",
-  "Kenya",
-  "South Africa",
-  // Add more countries as needed
-] as const;
-
-type ShippingInfo = {
-  fullName: string;
-  address1: string;
-  landmark: string;
-  city: string;
-  state: string; // Now string to allow flexibility
-  country: (typeof COUNTRIES)[number];
-};
 
 type PaymentMethod = "PAYSTACK" | "STRIPE";
 
@@ -43,6 +30,7 @@ export default function GuestCheckoutPage() {
   const { items } = useCartStore();
   const { products } = useProductStore();
   const { currency } = useUserStore();
+  const {showToast} = useToast()
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -92,13 +80,14 @@ export default function GuestCheckoutPage() {
   const recommendedMethod: PaymentMethod =
     currency === "NGN" ? "PAYSTACK" : "STRIPE";
 
-  const [shipping, setShipping] = useState<ShippingInfo>({
+  const [shipping, setShipping] = useState<ShippingAddress>({
     fullName: "",
-    address1: "",
-    landmark: "",
+    streetAddress: "",
+    landMark: "",
     city: "",
     state: "Lagos",
     country: "Nigeria",
+    postalCode: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -143,19 +132,6 @@ export default function GuestCheckoutPage() {
     "Zamfara",
   ] as const;
 
-  type Product = {
-    id: string;
-    label: string;
-    price: number;
-    SRC: string;
-  };
-
-  type CartItem = {
-    id: string;
-    quantity: number;
-    selectedSize?: string;
-  };
-
   type CartLine = CartItem & { product: Product };
 
   function formatMoney(amount: number, currency: string) {
@@ -177,31 +153,107 @@ export default function GuestCheckoutPage() {
   const isFormValid = useMemo(() => {
     return (
       shipping.fullName.trim() &&
-      shipping.address1.trim() &&
+      shipping.streetAddress.trim() &&
       shipping.city.trim() &&
       isValidEmail(email) &&
       phoneOk
     );
   }, [shipping, email, phoneOk]);
 
-  const handleGuestPay = async () => {
+  const handlePay = async () => {
     setError("");
-    if (!isFormValid)
-      return setError("Please fill in all required fields correctly.");
+    if (!isFormValid) {
+      setError("Please fill in all required fields correctly.");
+      return;
+    }
+
     setLoading(true);
+
     try {
-      // Logic for Paystack...
+      const orderRes = await fetch("/api/users/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          phone: phone ? formatPhoneNumberIntl(phone) : null,
+          currency,
+          shippingAddress: shipping,
+          items: cartItems.map((i) => ({
+            productId: i.product.id,
+            quantity: i.quantity,
+            selectedSize: i.selectedSize ?? null,
+            selectedColor: i.selectedColor ?? null,
+          })),
+          subtotal,
+          shippingFee,
+          total: totalAmount,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok)
+        throw new Error(orderData?.error || "Failed to create order");
+
+      const orderId = orderData?.orderId as string | undefined;
+      if (!orderId) throw new Error("Order creation failed (missing orderId)");
+
+      if (paymentMethod === "PAYSTACK") {
+        const initRes = await fetch("/api/users/paystack/initialise", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId }),
+        });
+
+        const initData = await initRes.json();
+        if (!initRes.ok)
+          throw new Error(initData?.error || "Failed to initialize Paystack");
+
+        const authorization_url = initData?.authorization_url as
+          | string
+          | undefined;
+        if (!authorization_url)
+          throw new Error("Paystack did not return an authorization URL");
+
+        window.location.href = authorization_url;
+        return;
+      }
+      const stripeItems = cartItems.map((i) => ({
+        productId: i.product.id, 
+        quantity: i.quantity,
+        name: i.product.name, 
+        image: i.product.images?.[0] || null,
+      }));
+
+      const initRes = await fetch("/api/users/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: stripeItems,
+          currency,
+          email: email.trim().toLowerCase(),
+          guestId: localStorage.getItem("guestId"), 
+        }),
+      });
+      const initData = await initRes.json();
+      if (!initRes.ok)
+        throw new Error(initData?.error || "Failed to initialize Paystack");
+
+      const authorization_url = initData?.url as string | undefined;
+      if (!authorization_url)
+        throw new Error("Stripe did not return an authorization URL");
+
+      window.location.href = authorization_url;
+      return;
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong.");
+      showToast('Error Creating Order', 'error')
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-foreground selection:text-background">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-12 min-h-screen">
-        {/* LEFT SIDE: FORM (7 Columns) */}
         <div className="lg:col-span-7 px-6 py-12 lg:px-16 lg:py-20 overflow-y-auto">
           <div className="max-w-lg">
             <button
@@ -213,7 +265,7 @@ export default function GuestCheckoutPage() {
             </button>
 
             <header className="mb-12">
-              <h1 className="text-3xl lg:text-4xl font-light tracking-tight mb-3">
+              <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
                 Checkout
               </h1>
               <p className="text-foreground/60 text-sm">
@@ -326,9 +378,9 @@ export default function GuestCheckoutPage() {
                         }
                         className="bg-transparent border-b border-foreground/20 py-3 text-sm focus:border-foreground outline-none transition-colors"
                       >
-                        {COUNTRIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
+                        {countries.map((c) => (
+                          <option key={c.code} value={c.name}>
+                            {c.name}
                           </option>
                         ))}
                       </select>
@@ -368,18 +420,18 @@ export default function GuestCheckoutPage() {
                     </div>
                     <ModernInput
                       label="Street Address"
-                      value={shipping.address1}
+                      value={shipping.streetAddress}
                       onChange={(v: any) =>
-                        setShipping({ ...shipping, address1: v })
+                        setShipping({ ...shipping, streetAddress: v })
                       }
                     />
                   </div>
 
                   <ModernInput
                     label="Landmark (Optional)"
-                    value={shipping.landmark}
+                    value={shipping.landMark}
                     onChange={(v: any) =>
-                      setShipping({ ...shipping, landmark: v })
+                      setShipping({ ...shipping, landMark: v })
                     }
                   />
                 </div>
@@ -396,29 +448,6 @@ export default function GuestCheckoutPage() {
                   </h2>
                 </div>
 
-                <p className="text-sm text-foreground/60 leading-relaxed mb-6">
-                  {recommendedMethod === "STRIPE" ? (
-                    <>
-                      <span className="font-semibold text-foreground">
-                        Recommended:
-                      </span>{" "}
-                      <span className="font-semibold">Stripe</span> — better for
-                      paying in{" "}
-                      <span className="font-semibold">foreign currencies</span>{" "}
-                      (USD, EUR, GBP, etc.).
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold text-foreground">
-                        Recommended:
-                      </span>{" "}
-                      <span className="font-semibold">Paystack</span> — best for{" "}
-                      <span className="font-semibold">NGN</span> payments in
-                      Nigeria.
-                    </>
-                  )}
-                </p>
-
                 <div className="space-y-4">
                   {/* PAYSTACK ROW */}
                   <button
@@ -427,7 +456,7 @@ export default function GuestCheckoutPage() {
                     className={[
                       "w-full flex items-start justify-between gap-4 rounded-2xl border p-5 transition-all text-left",
                       paymentMethod === "PAYSTACK"
-                        ? "border-foreground bg-foreground/5"
+                        ? "border-foreground"
                         : "border-foreground/10 hover:border-foreground/30",
                     ].join(" ")}
                   >
@@ -445,17 +474,23 @@ export default function GuestCheckoutPage() {
                         )}
                       </div>
 
-                      <div>
-                        <p className="text-sm font-bold">Paystack</p>
-                        <p className="text-xs text-foreground/60 mt-1">
+                      <div className="flex gap-4 flex-col">
+                        <Image
+                          src="/assets/paystack.png"
+                          alt="Paystack Logo"
+                          width={100}
+                          height={20}
+                          className="w-24 h-5 object-contain"
+                        />
+                        <p className="text-sm text-foreground/60 mt-1">
                           Best for NGN • Local cards • Bank transfer/USSD
                         </p>
 
-                        <ul className="mt-3 text-xs text-foreground/60 space-y-1">
+                        {/* <ul className="mt-3 text-xs text-foreground/60 space-y-1">
                           <li>✅ Very smooth for Nigerian customers</li>
                           <li>✅ Often fewer failed local payments</li>
                           <li>⚠️ Limited multi-currency support</li>
-                        </ul>
+                        </ul> */}
                       </div>
                     </div>
 
@@ -473,7 +508,7 @@ export default function GuestCheckoutPage() {
                     className={[
                       "w-full flex items-start justify-between gap-4 rounded-2xl border p-5 transition-all text-left",
                       paymentMethod === "STRIPE"
-                        ? "border-foreground bg-foreground/5"
+                        ? "border-foreground"
                         : "border-foreground/10 hover:border-foreground/30",
                     ].join(" ")}
                   >
@@ -491,14 +526,20 @@ export default function GuestCheckoutPage() {
                         )}
                       </div>
 
-                      <div>
-                        <p className="text-sm font-bold">Stripe</p>
+                      <div className="flex flex-col gap-4">
+                        <Image
+                          src="/assets/stripe.png"
+                          alt="Stripe Logo"
+                          width={100}
+                          height={40}
+                          className="w-24 h-5 object-contain"
+                        />
                         <p className="text-xs text-foreground/60 mt-1">
                           Best for USD/EUR/GBP • Global cards • True
                           multi-currency
                         </p>
 
-                        <ul className="mt-3 text-xs text-foreground/60 space-y-1">
+                        {/* <ul className="mt-3 text-xs text-foreground/60 space-y-1">
                           <li>✅ Strong international card acceptance</li>
                           <li>
                             ✅ Great multi-currency + receipts/disputes tools
@@ -506,7 +547,7 @@ export default function GuestCheckoutPage() {
                           <li>
                             ⚠️ For NGN-only customers, Paystack may feel simpler
                           </li>
-                        </ul>
+                        </ul> */}
                       </div>
                     </div>
 
@@ -520,7 +561,7 @@ export default function GuestCheckoutPage() {
               </section>
 
               <button
-                onClick={handleGuestPay}
+                onClick={handlePay}
                 disabled={loading || !isFormValid}
                 className="w-full py-4 bg-foreground text-background rounded-lg font-semibold text-sm hover:bg-foreground/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -549,15 +590,15 @@ export default function GuestCheckoutPage() {
                 >
                   <div className="relative w-16 h-20 bg-foreground/3 rounded-lg overflow-hidden shrink-0">
                     <Image
-                      src={item.product.SRC}
-                      alt={item.product.label}
+                      src={item.product.images[0]}
+                      alt={item.product.name}
                       fill
                       className="object-cover"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold truncate">
-                      {item.product.label}
+                      {item.product.name}
                     </h4>
                     <p className="text-xs text-foreground/50 mt-1">
                       {item.selectedSize && `Size ${item.selectedSize} • `}Qty{" "}
@@ -598,8 +639,9 @@ export default function GuestCheckoutPage() {
             <div className="mt-12 flex items-start gap-3 text-foreground/50">
               <IoLockClosedOutline className="text-lg shrink-0" />
               <p className="text-xs leading-relaxed">
-                Secure payment via Paystack. Your data is encrypted and not
-                stored.
+                Secure payment via{" "}
+                {paymentMethod === "PAYSTACK" ? "Paystack" : "Stripe"}. Your
+                data is encrypted and not stored.
               </p>
             </div>
           </div>

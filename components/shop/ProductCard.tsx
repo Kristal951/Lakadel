@@ -6,8 +6,8 @@ import { IoBagOutline } from "react-icons/io5";
 import { FiArrowUpLeft } from "react-icons/fi";
 import { useToast } from "@/hooks/useToast";
 import useUserStore from "@/store/userStore";
-import { formatAmount, formatNGN, formatPrice } from "@/lib";
 import PriceContainer from "./PriceContainer";
+import { useExchangeRateStore } from "@/store/exchangeRate";
 
 export default function ProductCard({
   id,
@@ -30,8 +30,7 @@ export default function ProductCard({
 }) {
   const { addToCart } = useCartStore();
   const { showToast } = useToast();
-  const { currencySymbol, currency } = useUserStore();
-  console.log(currency, price);
+  const { currency } = useUserStore();
 
   const handleAddToCart = () => {
     const item = {

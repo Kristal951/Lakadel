@@ -8,18 +8,19 @@ import { useEffect, useRef, useState } from "react";
 import { CgProfile } from "react-icons/cg";
 import { IoBagOutline, IoSearchOutline } from "react-icons/io5";
 import ProfileMenu from "../ui/ProfileMenu";
+import useUserStore from "@/store/userStore";
 
 const Header = () => {
   const router = useRouter();
   const { items } = useCartStore();
   const { query, setQuery } = useProductStore();
+  const { user } = useUserStore();
 
   const [localQuery, setLocalQuery] = useState(query);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const goToBag = () => router.push("/shopping-bag");
-
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(localQuery), 300);
@@ -70,16 +71,30 @@ const Header = () => {
         </button>
 
         <div className="relative" ref={menuRef}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen((prev) => !prev);
-            }}
-            className="p-2 rounded-full cursor-pointer hover:bg-foreground/10 transition-colors"
-            aria-label="Profile Menu"
-          >
-            <CgProfile className="w-6 h-6" />
-          </button>
+          {user?.image ? (
+            <Image
+              src={user.image}
+              alt="Profile Image"
+              width={32}
+              height={32}
+              className="rounded-full cursor-pointer hover:bg-foreground/10 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen((prev) => !prev);
+              }}
+            />
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen((prev) => !prev);
+              }}
+              className="p-2 rounded-full cursor-pointer hover:bg-foreground/10 transition-colors"
+              aria-label="Profile Menu"
+            >
+              <CgProfile className="w-6 h-6" />
+            </button>
+          )}
 
           {open && (
             <div className="absolute right-0 mt-2">

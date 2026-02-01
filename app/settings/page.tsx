@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FiUser,
   FiLock,
@@ -18,6 +18,9 @@ import SecurityTab from "@/components/settings/SecurityTab";
 import NotificationsTab from "@/components/settings/NotificationsTab";
 import DangerZone from "@/components/settings/DangerZoneTab";
 import AppearanceTab from "@/components/settings/AppearanceTab";
+import { ArrowLeft } from "lucide-react";
+import useUserStore from "@/store/userStore";
+import { useSettingsDraftStore } from "@/store/settingsDraftStore";
 
 const categories = [
   { id: "profile", name: "Public Profile", icon: FiUser },
@@ -30,10 +33,20 @@ const categories = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
+  const { user } = useUserStore();
+  const { draft, setField, hydrateFromUser } = useSettingsDraftStore();
+
+   useEffect(() => {
+    hydrateFromUser(user);
+  }, [user, hydrateFromUser]);
+
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
       <div className="mb-10 px-4">
+        <button className="flex items-center justify-center mb-6 gap-1" onClick={() => window.history.back()}>
+          <ArrowLeft size={16} /> Back
+        </button>
         <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
           Settings
         </h1>
@@ -62,17 +75,17 @@ export default function SettingsPage() {
         </aside>
 
         <main className="flex-1 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          {activeTab === "profile" && <ProfileTab />}
+          {activeTab === "profile" && <ProfileTab user={user}/>}
 
-          {activeTab === "billing" && <BillingInfoTab />}
+          {activeTab === "billing" && <BillingInfoTab user={user}/>}
 
-          {activeTab === "security" && <SecurityTab />}
+          {activeTab === "security" && <SecurityTab user={user}/>}
 
-          {activeTab === "notifications" && <NotificationsTab />}
+          {activeTab === "notifications" && <NotificationsTab user={user}/>}
 
-          {activeTab === "danger" && <DangerZone />}
-
-          {activeTab === "appearance" && <AppearanceTab />}
+          {activeTab === "danger" && <DangerZone user={user}/>}
+          
+          {activeTab === "appearance" && <AppearanceTab user={user}/>}
 
           {/* Save Button Floating/Fixed */}
           <div className="pt-6 flex items-center justify-between border-t border-slate-100">
