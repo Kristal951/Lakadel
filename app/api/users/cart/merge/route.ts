@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const now = new Date();
 
   const cart = await prisma.$transaction(
-    async (tx) => {
+    async (tx: any) => {
       const cartRow = await tx.cart.upsert({
         where: { userId },
         create: { userId, createdAt: now, updatedAt: now },
