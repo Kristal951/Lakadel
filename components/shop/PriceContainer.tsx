@@ -1,3 +1,4 @@
+'use client'
 import { cn, formatPrice } from "@/lib";
 import { useExchangeRateStore } from "@/store/exchangeRate";
 import { useEffect } from "react";
