@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "guestUserId required" }, { status: 400 });
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     const guestCart = await tx.cart.findUnique({
       where: { userId: guestUserId },
       include: { items: true },
