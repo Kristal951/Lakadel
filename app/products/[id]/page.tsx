@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react"; // Added use here
 import { IoBagOutline } from "react-icons/io5";
 import useProductStore from "@/store/productStore";
 import Spinner from "@/components/ui/spinner";
@@ -13,14 +13,17 @@ import useUserStore from "@/store/userStore";
 import { CartItem } from "@/store/types";
 
 type ProductPageProps = {
-  params: { id: string } | Promise<{ id: string }>;
+  params: Promise<{ id: string }>; 
 };
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const [id, setId] = useState<string | null>(null);
+  // 1. Unwrap the params immediately using React 'use'
+  const { id } = use(params);
+
   const { fetchProducts, getProductById, loading, error } = useProductStore();
   const { addToCart } = useCartStore();
   const { showToast } = useToast();
+  
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>("");
@@ -28,6 +31,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { currency } = useUserStore();
 
   const handleAddToCart = () => {
+    if (!product) return;
     const item: CartItem = {
       id: product.id,
       quantity: 1,
@@ -38,13 +42,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     showToast("Item added to cart!", "success");
   };
 
-  useEffect(() => {
-    (async () => {
-      const resolved = await params;
-      setId(resolved.id);
-    })();
-  }, [params]);
-
+  // 2. Simplified logic: Fetch product whenever 'id' changes
   useEffect(() => {
     if (!id) return;
 
@@ -74,8 +72,10 @@ export default function ProductPage({ params }: ProductPageProps) {
     );
 
   if (error) return <EmptyState text={error} />;
+
   return (
     <section className="max-w-6xl mx-auto py-10 px-4 grid grid-cols-1 md:grid-cols-2 gap-10">
+      {/* ... rest of your JSX remains the same ... */}
       <div className="flex flex-col gap-8">
         <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100">
           {selectedImage ? (
@@ -91,7 +91,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             </div>
           )}
         </div>
-
+        {/* Gallery Thumbnails */}
         {product.images && product.images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto">
             {product.images.map((img: string) => (
@@ -104,12 +104,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 }`}
                 onClick={() => setSelectedImage(img)}
               >
-                <Image
-                  src={img}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
+                <Image src={img} alt={product.name} fill className="object-cover" />
               </div>
             ))}
           </div>
@@ -122,11 +117,7 @@ export default function ProductPage({ params }: ProductPageProps) {
           <p className="opacity-70">{product.description}</p>
         </div>
 
-        <PriceContainer
-          price={product.price}
-          currency={currency}
-          textSize="xl"
-        />
+        <PriceContainer price={product.price} currency={currency} textSize="xl" />
 
         {product.sizes?.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -158,9 +149,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                   key={color.hex}
                   style={{ backgroundColor: color.hex }}
                   className={`w-8 h-8 rounded-full border-2 transition ${
-                    selectedColor === color.name
-                      ? "border-(--accent,#B10E0E)"
-                      : "border-transparent"
+                    selectedColor === color.name ? "border-(--accent,#B10E0E)" : "border-transparent"
                   }`}
                   onClick={() => setSelectedColor(color.name)}
                 />

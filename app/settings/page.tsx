@@ -102,23 +102,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-/* Sub-components for cleaner code */
-
-function Toggle({ active }: { active?: boolean }) {
-  return (
-    <div
-      className={clsx(
-        "w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer",
-        active ? "bg-indigo-600" : "bg-slate-200",
-      )}
-    >
-      <div
-        className={clsx(
-          "w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200",
-          active ? "translate-x-6" : "translate-x-0",
-        )}
-      />
-    </div>
-  );
-}
