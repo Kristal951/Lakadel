@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Roboto, Lora } from "next/font/google";
 import "./globals.css";
 import Providers from "@/contexts/Providers";
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: "Lakadel",
@@ -46,6 +47,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${playfair.variable} font-sans antialiased`}
       >
         <Analytics/>
+        <SpeedInsights/>
         <Providers>{children}</Providers>
       </body>
     </html>
