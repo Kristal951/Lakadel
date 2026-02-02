@@ -26,7 +26,7 @@ const useProductStore = create<ProductState>((set, get) => ({
 
     set({ loading: true, error: null });
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/users/products");
       if (!res.ok) throw new Error("Failed to fetch products");
 
       const data: Product[] = await res.json();

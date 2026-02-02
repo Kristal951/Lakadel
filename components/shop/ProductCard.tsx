@@ -6,50 +6,44 @@ import { IoBagOutline } from "react-icons/io5";
 import { FiArrowUpLeft } from "react-icons/fi";
 import { useToast } from "@/hooks/useToast";
 import useUserStore from "@/store/userStore";
-import { formatAmount, formatNGN, formatPrice } from "@/lib";
 import PriceContainer from "./PriceContainer";
+import { useExchangeRateStore } from "@/store/exchangeRate";
+import { Product } from "@/store/types";
 
 export default function ProductCard({
   id,
-  label,
-  SRC,
+  name,
+  images,
   price,
-  quantity = 1,
-  selectedSize,
-  selectedColor,
+  sizes,
+  colors,
   description,
-}: {
-  id: string;
-  label: string;
-  SRC: string;
-  price: number;
-  quantity: number;
-  selectedSize: string;
-  selectedColor: string;
-  description: string;
-}) {
+}: Product) {
   const { addToCart } = useCartStore();
   const { showToast } = useToast();
-  const { currencySymbol, currency } = useUserStore();
-  console.log(currency, price);
+  const { currency } = useUserStore();
 
-  const handleAddToCart = () => {
-    const item = {
-      id,
-      quantity: quantity,
-      selectedSize: selectedSize,
-      selectedColor: selectedColor,
-    };
-    addToCart(item);
-    showToast("Item added to cart!", "success");
+const handleAddToCart = () => {
+  const selectedSize = sizes?.[0] ?? undefined;
+  const selectedColor = colors?.[0]?.name ?? undefined;
+
+  const item = {
+    id,
+    quantity: 1,
+    selectedSize,
+    selectedColor,
   };
+
+  addToCart(item);
+  showToast("Item added to cart!", "success");
+};
 
   return (
     <div className="group relative cursor-pointer p-4 flex flex-col gap-3">
       <div className="relative w-full aspect-3/3 overflow-hidden rounded-xl bg-gray-100">
         <Image
-          src={SRC}
-          alt={label}
+          src={images[0]}
+          alt={name}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -77,8 +71,8 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-base text-foreground font-semibold tracking-wide">
-          {label}
+        <h3 className="text-base font-serif text-foreground font-bold tracking-wide">
+          {name}
         </h3>
         <h2 className="text-base text-foreground/70">{description}</h2>
         <PriceContainer price={price} currency={currency} />

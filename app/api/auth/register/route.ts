@@ -1,42 +1,46 @@
+// app/api/auth/register/route.ts  (or wherever your register endpoint is)
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({ adapter });
+import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const body = await req.json().catch(() => ({}));
+
+    const name = String(body?.name ?? "").trim();
+    const emailRaw = String(body?.email ?? "").trim();
+    const email = emailRaw ? emailRaw.toLowerCase() : "";
+    const password = String(body?.password ?? "");
+
+    if (!name) {
+      return NextResponse.json({ message: "Name is required" }, { status: 400 });
+    }
 
     if (!email || !password) {
       return NextResponse.json(
         { message: "Email and password are required" },
-        { status: 400 },
-      );
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { message: "User already exists, please use another email." },
-        { status: 409 },
+        { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
         { success: false, message: "Password must be at least 6 characters" },
-        { status: 400 },
+        { status: 400 }
       );
     }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json(
+        { message: "User already exists, please use another email." },
+        { status: 409 }
+      );
+    }
+
+    const image = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=random&color=fff`;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -47,24 +51,18 @@ export async function POST(req: Request) {
         password: hashedPassword,
         authProvider: "EMAIL",
         isGuest: false,
-        currency: "USD",
+        image,
       },
+      select: { id: true, name: true, email: true, currency: true, image: true, role: true },
     });
 
     return NextResponse.json({
       success: true,
       message: "User registered successfully",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        currency: user.currency,
-      },
+      user,
     });
   } catch (error) {
-    return NextResponse.json(
-      { message: "Something went wrong" },
-      { status: 500 },
-    );
+    console.error("Register error:", error);
+    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
   }
 }

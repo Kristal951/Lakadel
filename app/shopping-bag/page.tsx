@@ -22,37 +22,10 @@ import PriceContainer from "@/components/shop/PriceContainer";
 
 export default function ShoppingBag() {
   const { items, removeFromCart, updateQuantity, clearCart } = useCartStore();
-  const { currency, currencySymbol } = useUserStore();
+  const { currency, user } = useUserStore();
   const { products } = useProductStore();
   const router = useRouter();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-
-  const handleStripeCheckout = async () => {
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cartItems.map((item) => ({
-            id: item.id,
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-            image: item.product.images[0],
-          })),
-          currency,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Stripe checkout error:", error);
-    }
-  };
 
   const goToShop = () => router.push("/shop");
 
@@ -69,15 +42,54 @@ export default function ShoppingBag() {
     0,
   );
 
+  // const gotoCheckout = async () => {
+  //     router.push("/shopping-bag/checkout/guest");
+
+  //   try {
+  //     const createRes = await fetch("/api/users/orders/create", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         cartItems: cartItems.map((i) => ({
+  //           productId: i.product.id,
+  //           quantity: i.quantity,
+  //           price: i.product.price,
+  //         })),
+  //         total: totalPrice,
+  //         currency,
+  //         email: user.email,
+  //         userId: user.id,
+  //       }),
+  //     });
+
+  //     const createData = await createRes.json();
+  //     if (!createRes.ok) throw new Error(createData.error || "Failed to create order");
+
+  //     const initRes = await fetch("/api/users/paystack/initialise", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ orderId: createData.orderId }),
+  //     });
+
+  //     const initData = await initRes.json();
+  //     if (!initRes.ok) throw new Error(initData.error || "Failed to init Paystack");
+
+  //     window.location.href = initData.authorization_url;
+  //   } catch (error) {
+  //     console.error("Paystack checkout error:", error);
+  //     // optionally show toast
+  //   }
+  // };
+
   if (cartItems.length === 0) {
     return (
       <section className="min-h-[70vh] flex flex-col items-center justify-center p-6 bg-background">
-        <div className="bg-foreground/20 p-16 rounded-[3rem] border border-foreground flex flex-col items-center text-center max-w-md">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-6">
-            <IoBagOutline size={32} className="text-foreground" />
+        <div className="bg-background p-16 rounded-[3rem] flex flex-col items-center text-center max-w-md">
+          <div className="w-20 h-20 bg-foreground border border-foreground rounded-full flex items-center justify-center shadow-sm mb-6">
+            <IoBagOutline size={32} className="text-background" />
           </div>
           <h2 className="text-3xl font-bold text-foreground">
-            Your bag is empty
+            Your Shopping bag is empty
           </h2>
           <p className="text-foreground/70 mt-3 mb-8">
             Discovery awaits! Explore our latest arrivals and find something
@@ -85,7 +97,7 @@ export default function ShoppingBag() {
           </p>
           <button
             onClick={goToShop}
-            className="w-full py-4 bg-background text-foreground rounded-full font-semibold hover:bg-foreground hover:text-background transition-all"
+            className="w-full py-4 border border-foreground bg-background text-foreground rounded-full font-semibold hover:bg-foreground hover:text-background transition-all"
           >
             Explore Shop
           </button>
@@ -110,7 +122,7 @@ export default function ShoppingBag() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
         <div>
           <h1 className="text-5xl font-extrabold tracking-tight text-foreground">
-            Bag
+            Shopping Bag
           </h1>
           <p className="text-foreground/50 mt-2 text-lg font-medium">
             {cartItems.length} {cartItems.length === 1 ? "item" : "items"} ready
@@ -298,7 +310,7 @@ export default function ShoppingBag() {
             </div>
 
             <button
-              onClick={handleStripeCheckout}
+              onClick={() => router.push("/shopping-bag/checkout")}
               className="w-full bg-white text-black py-5 rounded-3xl font-bold flex items-center justify-center gap-2 hover:bg-neutral-100 transition-all duration-300 group active:scale-[0.98]"
             >
               Proceed to Checkout

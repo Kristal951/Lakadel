@@ -104,6 +104,7 @@ export default function SidebarFilters() {
                     onChange={() => toggleSizes(size)}
                     className={`w-5 h-5 rounded transition ${isChecked ? "accent-foreground" : ""}`}
                   />
+
                   <span
                     className="select-none font-medium transition-colors"
                     style={{

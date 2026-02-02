@@ -40,7 +40,7 @@ export default function CountrySelectorModal() {
               key={c.code}
               onClick={() => {
                 setCountry(c.name);
-                setCurrency(c.currency, c.symbol);
+                setCurrency(c.currency);
                 setShow(false);
               }}
               className="flex items-center justify-between py-3 px-4 rounded-xl border hover:bg-foreground hover:text-background transition"

@@ -29,10 +29,7 @@ const useUserStore = create<UserState>((set) => ({
   setUser: (user) => set({ user, isAuthenticated: true, loading: false }),
 
   setCurrency: (currency: string) => {
-    const symbol =
-      Object.values(countryCurrencyMap).find((c) => c.code === currency)
-        ?.symbol || "$";
-    set({ currency, currencySymbol: symbol });
+    set({ currency });
   },
 
   setCountry: (countryCode: string) => {
@@ -86,7 +83,7 @@ const useUserStore = create<UserState>((set) => ({
     try {
       set({ loading: true, error: null });
 
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/users/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

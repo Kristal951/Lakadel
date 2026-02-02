@@ -58,14 +58,7 @@ export default function Shop() {
         {productsToShow.map((product) => (
           <ProductCard
             key={product.id}
-            id={product.id}
-            SRC={product.images[0]}
-            label={product.name}
-            price={product.price}
-            selectedColor={product.colors[0]?.name}
-            selectedSize={product.sizes[0]}
-            quantity={1}
-            description={product.description}
+            {...product}
           />
         ))}
       </div>

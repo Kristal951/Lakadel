@@ -1,234 +1,103 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   FiUser,
   FiLock,
   FiBell,
   FiTrash2,
+  FiCreditCard,
+  FiMonitor,
+  FiShield,
+  FiCheck,
 } from "react-icons/fi";
+import clsx from "clsx";
+import ProfileTab from "@/components/settings/ProfileTab";
+import BillingInfoTab from "@/components/settings/BillingInfoTab";
+import SecurityTab from "@/components/settings/SecurityTab";
+import NotificationsTab from "@/components/settings/NotificationsTab";
+import DangerZone from "@/components/settings/DangerZoneTab";
+import AppearanceTab from "@/components/settings/AppearanceTab";
+import { ArrowLeft } from "lucide-react";
+import useUserStore from "@/store/userStore";
+import { useSettingsDraftStore } from "@/store/settingsDraftStore";
+
+const categories = [
+  { id: "profile", name: "Public Profile", icon: FiUser },
+  { id: "security", name: "Security", icon: FiShield },
+  { id: "notifications", name: "Notifications", icon: FiBell },
+  { id: "appearance", name: "Appearance", icon: FiMonitor },
+  { id: "billing", name: "Billing Information", icon: FiCreditCard },
+  { id: "danger", name: "Danger Zone", icon: FiTrash2, color: "text-red-500" },
+];
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("profile");
+  const { user } = useUserStore();
+  const { draft, setField, hydrateFromUser } = useSettingsDraftStore();
+
+   useEffect(() => {
+    hydrateFromUser(user);
+  }, [user, hydrateFromUser]);
+
+
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 mt-18">
-      <h1 className="text-3xl font-bold mb-10">Settings</h1>
-
-      <div className="space-y-14">
-        <section>
-          <div className="flex items-center gap-2 mb-4 text-foreground/70">
-            <FiUser />
-            <h2 className="text-xl font-semibold">Public Profile</h2>
-          </div>
-
-          <div className="grid gap-4 p-6 border border-foreground/10 rounded-2xl bg-foreground/2">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Display Name</label>
-              <input
-                type="text"
-                placeholder="Your Name"
-                className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Email Address</label>
-              <input
-                type="email"
-                placeholder="user@example.com"
-                className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ================= SECURITY ================= */}
-        <section>
-          <div className="flex items-center gap-2 mb-4 text-foreground/70">
-            <FiLock />
-            <h2 className="text-xl font-semibold">Security</h2>
-          </div>
-
-          <div className="p-6 border border-foreground/10 rounded-2xl space-y-3">
-            <button className="px-4 py-2 bg-foreground text-background rounded-lg font-medium">
-              Change Password
-            </button>
-            <p className="text-sm text-foreground/50">
-              Last changed 3 months ago
-            </p>
-          </div>
-        </section>
-
-        {/* ================= NOTIFICATIONS ================= */}
-        <section>
-          <div className="flex items-center gap-2 mb-4 text-foreground/70">
-            <FiBell />
-            <h2 className="text-xl font-semibold">Notifications</h2>
-          </div>
-
-          <div className="grid gap-4 p-6 border border-foreground/10 rounded-2xl bg-foreground/2">
-            {[
-              ["Order updates", "Get notified about order status"],
-              ["Promotions & discounts", "Receive offers and sales alerts"],
-              ["Account activity", "Security & login alerts"],
-            ].map(([title, desc]) => (
-              <label
-                key={title}
-                className="flex items-center justify-between gap-4"
-              >
-                <div>
-                  <p className="font-medium">{title}</p>
-                  <p className="text-sm text-foreground/50">{desc}</p>
-                </div>
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 accent-foreground"
-                />
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {/* ================= APPEARANCE ================= */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-foreground/70">
-            Appearance
-          </h2>
-
-          <div className="p-6 border border-foreground/10 rounded-2xl">
-            <label className="text-sm font-medium mb-2 block">Theme</label>
-            <select className="w-full px-4 py-2 rounded-lg border border-foreground/20 bg-background">
-              <option>System</option>
-              <option>Light</option>
-              <option>Dark</option>
-            </select>
-          </div>
-        </section>
-
-        {/* ================= BILLING INFORMATION ================= */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-foreground/70">
-            Billing Information
-          </h2>
-
-          <div className="grid gap-6 p-6 border border-foreground/10 rounded-2xl bg-foreground/2">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Full Name</label>
-              <input
-                type="text"
-                placeholder="John Doe"
-                className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Street Address</label>
-              <input
-                type="text"
-                placeholder="123 Main Street"
-                className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">City</label>
-                <input
-                  type="text"
-                  placeholder="Lagos"
-                  className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">State</label>
-                <input
-                  type="text"
-                  placeholder="Lagos State"
-                  className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">ZIP / Postal Code</label>
-                <input
-                  type="text"
-                  placeholder="100001"
-                  className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Country</label>
-              <select className="px-4 py-2 rounded-lg border border-foreground/20 bg-background">
-                <option>Nigeria</option>
-                <option>United States</option>
-                <option>United Kingdom</option>
-                <option>Canada</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Phone Number</label>
-              <input
-                type="tel"
-                placeholder="+234 801 234 5678"
-                className="px-4 py-2 rounded-lg border border-foreground/20 bg-background"
-              />
-            </div>
-
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="w-5 h-5 accent-foreground"
-              />
-              <span className="text-sm">
-                Use this as my default billing address
-              </span>
-            </label>
-          </div>
-        </section>
-
-        {/* ================= ACTIVE SESSIONS ================= */}
-        <section>
-          <div className="flex items-center gap-2 mb-4 text-foreground/70">
-            <FiLock />
-            <h2 className="text-xl font-semibold">Active Sessions</h2>
-          </div>
-
-          <div className="p-6 border border-foreground/10 rounded-2xl">
-            <p className="text-sm text-foreground/50 mb-4">
-              You’re logged in on 2 devices
-            </p>
-            <button className="px-4 py-2 border rounded-lg hover:bg-foreground hover:text-background transition">
-              Log out of all devices
-            </button>
-          </div>
-        </section>
-
-        {/* ================= DANGER ZONE ================= */}
-        <section className="pt-6 border-t border-red-100">
-          <div className="flex items-center gap-2 mb-4 text-red-600">
-            <FiTrash2 />
-            <h2 className="text-xl font-semibold">Danger Zone</h2>
-          </div>
-
-          <div className="p-6 border border-red-100 rounded-2xl bg-red-50/30">
-            <p className="text-sm text-red-600/80 mb-4">
-              Once you delete your account, there is no going back.
-            </p>
-            <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg font-medium hover:bg-red-600 hover:text-white transition">
-              Delete Account
-            </button>
-          </div>
-        </section>
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="mb-10 px-4">
+        <button className="flex items-center justify-center mb-6 gap-1" onClick={() => window.history.back()}>
+          <ArrowLeft size={16} /> Back
+        </button>
+        <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+          Settings
+        </h1>
+        <p className="text-foreground/70 mt-2 font-medium">
+          Manage your account preferences and configurations.
+        </p>
       </div>
 
-      {/* ================= SAVE ================= */}
-      <div className="mt-16 flex justify-end">
-        <button className="px-10 py-3 bg-foreground text-background rounded-full font-bold hover:scale-105 active:scale-95 transition-transform">
-          Save Changes
-        </button>
+      <div className="flex flex-col md:flex-row gap-12">
+        <aside className="w-full md:w-64 space-y-1">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveTab(cat.id)}
+              className={clsx(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200",
+                activeTab === cat.id
+                  ? "bg-foreground text-background"
+                  : "text-foreground/60 hover:bg-slate-100 hover:text-foreground",
+              )}
+            >
+              <cat.icon className={clsx("w-5 h-5", cat.color)} />
+              {cat.name}
+            </button>
+          ))}
+        </aside>
+
+        <main className="flex-1 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {activeTab === "profile" && <ProfileTab user={user}/>}
+
+          {activeTab === "billing" && <BillingInfoTab user={user}/>}
+
+          {activeTab === "security" && <SecurityTab user={user}/>}
+
+          {activeTab === "notifications" && <NotificationsTab user={user}/>}
+
+          {activeTab === "danger" && <DangerZone user={user}/>}
+          
+          {activeTab === "appearance" && <AppearanceTab user={user}/>}
+
+          {/* Save Button Floating/Fixed */}
+          <div className="pt-6 flex items-center justify-between border-t border-slate-100">
+            <p className="text-xs text-slate-400 italic">
+              Last saved: 2 minutes ago
+            </p>
+            <button className="flex items-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 group">
+              <FiCheck className="group-hover:scale-125 transition-transform" />
+              Save Settings
+            </button>
+          </div>
+        </main>
       </div>
     </div>
   );
