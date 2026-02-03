@@ -41,7 +41,7 @@ export default function AdminSidebar() {
       {/* Mobile Trigger - More modern floating style */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden bg-white/80 backdrop-blur-md border border-slate-200 rounded-full p-3 shadow-lg hover:scale-105 transition-transform"
+        className=" top-0 left-4 z-50 md:hidden fixed bg-white/80 backdrop-blur-md border border-slate-200 rounded-full p-3 shadow-lg hover:scale-105 transition-transform"
       >
         <Menu className="w-5 h-5 text-slate-600" />
       </button>
@@ -57,7 +57,7 @@ export default function AdminSidebar() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          "fixed z-50 md:sticky top-0 left-0 h-screen w-72 bg-background backdrop-blur-xl border-r border-slate-200/60 flex flex-col transition-all duration-300 ease-in-out",
+          "fixed z-50 top-0 left-0 h-screen w-72 bg-background backdrop-blur-xl border-r border-slate-200/60 flex flex-col transition-all duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
@@ -97,7 +97,7 @@ export default function AdminSidebar() {
             Main Menu
           </div>
           {navItems.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            const active = pathname === item.href 
             const Icon = item.icon;
 
             return (
@@ -108,7 +108,7 @@ export default function AdminSidebar() {
                 className={clsx(
                   "group relative flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-background text-foreground shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-foreground/10"
+                    ? " text-foreground bg-foreground/10"
                     : "text-foreground/60 hover:text-foreground hover:bg-foreground/5"
                 )}
               >
@@ -125,7 +125,7 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Footer/User Section */}
-        <div className="p-4 mt-auto">
+        {/* <div className="p-4 mt-auto">
           <div className="border border-foreground/50 rounded-2xl p-4 flex flex-col gap-3 shadow-xl">
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-foreground/10 border border-slate-600" />
@@ -142,7 +142,7 @@ export default function AdminSidebar() {
                 Sign Out
             </button>
           </div>
-        </div>
+        </div> */}
       </aside>
     </>
   );

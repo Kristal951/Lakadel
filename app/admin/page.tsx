@@ -84,24 +84,32 @@ export default async function AdminDashboardPage() {
           value={`₦${revenueToday.toLocaleString()}`}
           icon={CreditCard}
           trend="Today"
+          iconColor="text-emerald-500"
+          iconBGColor="bg-emerald-500/10"
         />
         <StatCard
           title="Orders Today"
           value={ordersToday.toString()}
           icon={ShoppingBag}
           trend="Today"
+          iconColor="text-blue-500"
+          iconBGColor="bg-blue-500/10"
         />
         <StatCard
           title="Pending Orders"
           value={pendingOrders.toString()}
           icon={Clock}
           trend="Needs attention"
+          iconColor="text-amber-500"
+          iconBGColor="bg-amber-500/10"
         />
         <StatCard
           title="Customers"
           value={customersCount.toString()}
           icon={Users}
           trend="Total"
+          iconColor="text-indigo-500"
+          iconBGColor="bg-indigo-500/10"
         />
       </div>
 

@@ -39,7 +39,6 @@ export function formatPrice(amount: number, currency: string, rate: number) {
 
   if (!Number.isFinite(converted)) return "—";
 
-  // Determine decimal precision: JPY doesn't use decimals, NGN usually doesn't in e-commerce
   const isZeroDecimal = ["NGN", "JPY", "KRW"].includes(currency.toUpperCase());
 
   const nf = new Intl.NumberFormat("en-US", {
@@ -68,3 +67,13 @@ export function formatPrice(amount: number, currency: string, rate: number) {
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const categories = [
+    "T-shirts / Tops",
+    "Trousers",
+    "Flags",
+    "Shorts",
+    "Dresses",
+  ];
+  export const sizes = ["XS", "S", "M", "L", "XL"];
+  export const genders = ["male", "female", "unisex"]

@@ -80,6 +80,10 @@ model Product {
   totalStock  String      @default("0")
   cartItems   CartItem[]
   orderItems  OrderItem[]
+  category  String?
+  status    String  @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
+  sku       String?  @unique
+  gender    String?
 }
 
 model Cart {
