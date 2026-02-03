@@ -12,7 +12,7 @@ export default function TopCategories() {
   ];
 
   return (
-    <div className="w-full h-screen flex flex-col px-20 py-10">
+    <div className="w-full h-screen flex flex-col md:px-20 md:py-10 px-4 py-2">
       <h1 className="text-[#B10E0E] text-3xl font-medium">Top Products</h1>
 
       <div className="w-full">
