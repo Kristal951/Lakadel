@@ -1,18 +1,10 @@
 "use client";
+import { categories, sizes } from "@/lib";
 import useProductStore from "@/store/productStore";
 import { useEffect, useState } from "react";
 
 export default function SidebarFilters() {
   const { filters, setFilter } = useProductStore();
-
-  const categories = [
-    "T-shirts / Tops",
-    "Trousers",
-    "Flags",
-    "Shorts",
-    "Dresses",
-  ];
-  const sizes = ["XS", "S", "M", "L", "XL"];
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
