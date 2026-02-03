@@ -51,23 +51,6 @@ export function StatCard({
 }: StatCardProps) {
   const t = TONE[tone];
 
-interface StatCardProps {
-  title: string;
-  value: string;
-  icon: any; // Or LucideIcon if you've imported it
-  trend: string;
-  iconColor: string; // Add this line
-  iconBGColor: string; // Add this line
-}
-
-export function StatCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  iconColor,
-  iconBGColor,
-}: StatCardProps) {
   return (
     <div
       className={clsx(
