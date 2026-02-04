@@ -11,14 +11,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "orderId required" }, { status: 400 });
     }
 
+    const baseUrl =
+      process.env.PAYSTACK_CALLBACK_URL || process.env.NEXT_PUBLIC_APP_URL;
+
+    if (!baseUrl) {
+      throw new Error("Missing PAYSTACK_CALLBACK_URL or NEXT_PUBLIC_APP_URL");
+    }
+
     const callbackUrl =
-      process.env.PAYSTACK_CALLBACK_URL ||
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") + "/paystack/callback";
+      baseUrl.replace(/\/$/, "") + `/success?orderId=${orderId}`;
 
     if (!callbackUrl || callbackUrl.includes("undefined")) {
       return NextResponse.json(
         { error: "PAYSTACK_CALLBACK_URL is not set" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -54,7 +60,9 @@ export async function POST(req: Request) {
         });
 
         const reference = init?.data?.reference as string | undefined;
-        const authorization_url = init?.data?.authorization_url as string | undefined;
+        const authorization_url = init?.data?.authorization_url as
+          | string
+          | undefined;
 
         if (!reference || !authorization_url) {
           throw new Error("Paystack initialize did not return reference/url");
@@ -71,7 +79,7 @@ export async function POST(req: Request) {
           authorization_url,
         };
       },
-      { maxWait: 10_000, timeout: 20_000 }
+      { maxWait: 10_000, timeout: 20_000 },
     );
 
     if (result.kind === "not_found") {
@@ -79,12 +87,20 @@ export async function POST(req: Request) {
     }
 
     if (result.kind === "already_paid") {
-      return NextResponse.json({ error: "Order already paid" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Order already paid" },
+        { status: 400 },
+      );
     }
     if (result.kind === "reuse") {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
-        select: { customerEmail: true, totalKobo: true, id: true, paymentRef: true },
+        select: {
+          customerEmail: true,
+          totalKobo: true,
+          id: true,
+          paymentRef: true,
+        },
       });
 
       const init = await paystackInitialize({
@@ -94,7 +110,9 @@ export async function POST(req: Request) {
         metadata: { orderId, app: "Lakadel", reuse: true },
       });
 
-      const authorization_url = init?.data?.authorization_url as string | undefined;
+      const authorization_url = init?.data?.authorization_url as
+        | string
+        | undefined;
       return NextResponse.json({
         reference: order!.paymentRef,
         authorization_url,
@@ -109,7 +127,7 @@ export async function POST(req: Request) {
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message || "Failed to initialize Paystack" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

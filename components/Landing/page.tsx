@@ -11,15 +11,9 @@ export default function LandingPage() {
       <NavBar />
       <section
         id="home"
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen w-full flex items-center justify-center"
       >
         <Hero />
-      </section>
-      <section
-        id="products"
-        className="min-h-[200vh] flex items-center justify-center"
-      >
-        <Products />
       </section>
       <section
         id="about"
