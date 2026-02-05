@@ -13,13 +13,13 @@ interface SelectionBarProps {
 export default function SelectionBar({ iconObject }: SelectionBarProps) {
   const [selected, setSelected] = useState<string>("Shirt");
   return (
-    <div className="w-full p-4 flex gap-8 overflow-x-auto">
+    <div className="w-full md:p-4 py-2 flex gap-8 overflow-x-auto">
       {iconObject.map((item, index) => (
         <div key={index} className="flex flex-col items-center justify-center ">
           <button
             onClick={() => setSelected(item.label ?? "")}
             className={`text-2xl cursor-pointer 
-                     transition-colors duration-200 hover:bg-[#B10E0E]/10 ${item.label === selected ? "bg-[#B10E0E] text-white" : "text-[#B10E0E]"} p-4 border-[#B10E0E] border rounded-full`}
+                     transition-colors duration-200 hover:bg-[#B10E0E]/10 ${item.label === selected ? "bg-[#B10E0E] text-white" : "text-[#B10E0E]"} md:p-4 p-2 border-[#B10E0E] border rounded-full`}
           >
             <div className="text-3xl ">{item.icon}</div>
           </button>

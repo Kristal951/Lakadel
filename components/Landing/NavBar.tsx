@@ -51,8 +51,8 @@ const NavBar = () => {
       className="fixed top-0 left-0 right-0 z-50 bg-transparent
         "
     >
-      <div className="mx-auto flex max-w-full items-center justify-between px-6 py-4">
-        <div className="relative h-11 w-35">
+      <div className="mx-auto flex w-full items-start md:items-center justify-between md:px-6 py-4 px-2 ">
+        <div className="relative h-11 md:w-35 w-20">
           <Image
             src="/Lakadel2.png"
             alt="Lakadel logo"
@@ -69,7 +69,7 @@ const NavBar = () => {
 
           <Link
             href="/shop"
-            className="px-6 py-2 cursor-pointer rounded-full font-semibold text-white
+            className="md:px-6 md:py-2 p-2 text-sm md:text-base cursor-pointer md:rounded-full rounded-md font-semibold text-white
             bg-linear-to-r from-[#B10E0E] to-[#8E0B0B]
             hover:scale-[1.03] hover:shadow-lg transition-all"
           >
