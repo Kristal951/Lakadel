@@ -9,6 +9,9 @@ import {
 } from "react-icons/fa";
 import "react-phone-number-input/style.css";
 import PhoneInput from "react-phone-number-input";
+import emailjs from "@emailjs/browser";
+import { useToast } from "@/hooks/useToast";
+import Spinner from "../ui/spinner";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -17,8 +20,11 @@ export default function Contact() {
     message: "",
   });
 
-  const [status, setStatus] = useState<null | "success" | "error">(null);
+  const [status, setStatus] = useState<null | "success" | "error" | "loading">(
+    null,
+  );
   const [phone, setPhone] = useState<string | undefined>(undefined);
+  const { showToast } = useToast();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -28,14 +34,29 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatus("loading");
+
     try {
-      // TODO: integrate EmailJS or backend
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        {
+          name: formData.name,
+          email: formData.email,
+          phone,
+          message: formData.message,
+        },
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!,
+      );
+
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
       setPhone(undefined);
+      showToast("Message sent successfully!", "success");
     } catch (error) {
       console.error(error);
       setStatus("error");
+      showToast("Error sending message, try again later!", "error");
     }
   };
 
@@ -50,7 +71,8 @@ export default function Contact() {
               Connect with Us
             </h2>
             <p className="mt-3 text-black/80">
-              Follow our journey, explore our collections, or reach out directly.
+              Follow our journey, explore our collections, or reach out
+              directly.
             </p>
           </div>
 
@@ -111,8 +133,11 @@ export default function Contact() {
             <div className="space-y-2 text-center lg:text-left">
               <div className="text-gray-800 text-base sm:text-lg">
                 <span className="font-semibold">Email:</span>{" "}
-                <a href="mailto:contact@yourbrand.com" className="hover:underline">
-                  contact@yourbrand.com
+                <a
+                  href="mailto:contact@yourbrand.com"
+                  className="hover:underline"
+                >
+                  lakadel.lkdl@gmail.com
                 </a>
               </div>
 
@@ -138,7 +163,10 @@ export default function Contact() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 flex w-full flex-col gap-4">
+          <form
+            onSubmit={handleSubmit}
+            className="mt-6 flex w-full flex-col gap-4"
+          >
             <input
               type="text"
               name="name"
@@ -191,22 +219,16 @@ export default function Contact() {
 
             <button
               type="submit"
-              className="w-full sm:w-fit border border-[#B10E0E] text-[#B10E0E] px-10 py-4 text-sm tracking-widest uppercase hover:bg-[#B10E0E] hover:text-white transition"
+              className="w-full sm:w-fit border flex items-center justify-center border-[#B10E0E] text-[#B10E0E] px-10 py-4 text-sm tracking-widest uppercase hover:bg-[#B10E0E] hover:text-white transition"
             >
-              Send Message
+              {status === "loading" ? (
+                <Spinner w="5" h="5" />
+              ) : (
+                <p>Send Message</p>
+              )}
             </button>
           </form>
-
-          {status === "success" && (
-            <p className="mt-4 text-green-600 text-center lg:text-left">
-              Message sent successfully!
-            </p>
-          )}
-          {status === "error" && (
-            <p className="mt-4 text-red-600 text-center lg:text-left">
-              Oops! Something went wrong.
-            </p>
-          )}
+        </div>
         </div>
       </div>
     </section>

@@ -121,7 +121,7 @@ export default function ShoppingBag() {
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
         <div>
-          <h1 className="text-5xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
             Shopping Bag
           </h1>
           <p className="text-foreground/50 mt-2 text-lg font-medium">
@@ -177,7 +177,7 @@ export default function ShoppingBag() {
               </div>
 
               <div className="flex-1 flex flex-col py-2">
-                <div className="flex justify-between items-start mb-1">
+                <div className="flex md:justify-between flex-col md:flex-row gap-1 items-start mb-1">
                   <h3 className="text-2xl font-bold text-foreground leading-tight">
                     {item.product.name}
                   </h3>

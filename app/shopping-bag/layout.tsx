@@ -5,9 +5,9 @@ export default function ShoppingBagLayout({children}: {
   children: React.ReactNode;
 }){
     return(
-        <div className="flex-1 w-full mt-30">
+        <div className="flex-1 w-full mt-22">
             <Header/>
-            <TopBar/>
+            {/* <TopBar/> */}
             {children}
         </div>
     )

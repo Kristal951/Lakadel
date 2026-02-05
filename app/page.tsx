@@ -14,12 +14,7 @@ export default function Home() {
       >
         <Hero />
       </section>
-      <section
-        id="products"
-        className="min-h-[200vh] flex items-center justify-center"
-      >
-        <Products />
-      </section>
+     
       <section
         id="about"
         className="min-h-screen flex items-center justify-center"

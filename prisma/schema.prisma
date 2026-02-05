@@ -84,6 +84,7 @@ model Product {
   status    String  @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
   sku       String?  @unique
   gender    String?
+  shippingFee String?
 }
 
 model Cart {
@@ -125,6 +126,8 @@ model Order {
   shippingAddress Json?
   user            User?       @relation(fields: [userId], references: [id])
   orderItems      OrderItem[]
+  shippingFee Int @default(0)
+  subTotal    Int @default(0)
 }
 
 model OrderItem {

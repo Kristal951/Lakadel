@@ -48,7 +48,7 @@ const NavBar = () => {
       initial={{ y: 0 }}
       animate={{ y: hidden ? "-100%" : "0%" }}
       transition={{ duration: 0.35, ease: "easeInOut" }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white
+      className="fixed top-0 left-0 right-0 z-50 bg-transparent
         "
     >
       <div className="mx-auto flex w-full items-start md:items-center justify-between md:px-6 py-4 px-2 ">
@@ -62,23 +62,8 @@ const NavBar = () => {
           />
         </div>
 
-        <div className="hidden md:flex items-center gap-10">
-          {navLinks.map((nav) => (
-            <button
-              key={nav.id}
-              onClick={() => handleScroll(nav.id, nav.label)}
-              className={`relative font-medium hover:text-[#B10E0E]
-              after:absolute cursor-pointer ${activeID === nav.label ? "text-[#B10E0E]" : "text-[#B10E0E]/50"} transition-all
-              hover:after:w-full`}
-            >
-              {nav.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Actions */}
         <div className="flex items-center md:gap-3">
-          <button className="px-5 py-2 text-sm md:text-base cursor-pointer text-[#B10E0E] rounded-full hover:bg-[#B10E0E]/10 transition">
+          <button className="px-5 py-2 text-sm md:text-base cursor-pointer text-white rounded-full hover:bg-white/10 transition">
             Sign In
           </button>
 

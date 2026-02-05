@@ -236,7 +236,7 @@ export default function GuestCheckoutPage() {
       });
       const initData = await initRes.json();
       if (!initRes.ok)
-        throw new Error(initData?.error || "Failed to initialize Paystack");
+        throw new Error(initData?.error || "Failed to initialize Stripe");
 
       const authorization_url = initData?.url as string | undefined;
       if (!authorization_url)

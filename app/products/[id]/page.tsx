@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/useToast";
 import PriceContainer from "@/components/shop/PriceContainer";
 import useUserStore from "@/store/userStore";
 import { CartItem } from "@/store/types";
+import { useRouter } from "next/navigation";
 
 type ProductPageProps = {
   params: Promise<{ id: string }>; 
@@ -29,6 +30,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>("");
   const [selectedColor, setSelectedColor] = useState<string | null>("");
   const { currency } = useUserStore();
+  const router = useRouter()
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -40,6 +42,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     };
     addToCart(item);
     showToast("Item added to cart!", "success");
+    router.push('/shopping-bag')
   };
 
   // 2. Simplified logic: Fetch product whenever 'id' changes
