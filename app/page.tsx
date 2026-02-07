@@ -16,12 +16,6 @@ export default function Home() {
       </section>
      
       <section
-        id="about"
-        className="min-h-screen flex items-center justify-center"
-      >
-        <AboutUs />
-      </section>
-      <section
         id="contact"
         className="min-h-screen w-full flex items-center justify-center"
       >

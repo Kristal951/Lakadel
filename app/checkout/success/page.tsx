@@ -115,7 +115,7 @@ export default function SuccessPage() {
              <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                 {isPaid ? "Payment Successful!" : isFailed ? "Payment Declined" : "Verifying Payment..."}
              </h1>
-             <p className="mt-2 text-sm text-muted-foreground font-medium max-w-[240px]">
+             <p className="mt-2 text-sm text-muted-foreground font-medium max-w-60">
                 {isPaid ? "Your order is confirmed and currently being processed." : "Waiting for the payment network to update."}
              </p>
 
@@ -133,7 +133,7 @@ export default function SuccessPage() {
 
           {/* Receipt Content */}
           <div className="px-8 pb-10">
-            <div className="bg-muted/30 dark:bg-white/5 rounded-[2rem] p-6 space-y-4">
+            <div className="bg-muted/30 dark:bg-white/5 rounded-4xl p-6 space-y-4">
                <Row label="Order Reference" value={order?.id} mono copy />
                <Row label="Transaction Date" value={formatDateTime(order?.paidAt)} />
                

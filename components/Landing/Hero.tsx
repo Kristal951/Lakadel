@@ -50,26 +50,11 @@ export const Hero = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Content Overlay */}
-      {/* <div className="relative z-20 text-center text-white px-6">
-        <motion.p
-          key={`text-${index}`}
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="uppercase tracking-[0.5em] text-xs md:text-sm font-light mb-4"
-        >
-          {slides[index].title}
-        </motion.p>
-        <h1 className="text-4xl md:text-6xl font-serif font-bold">Lakadel</h1>
-      </div> */}
-
-      {/* Optional: Slide Indicators */}
       <div className="absolute bottom-10 flex gap-3 z-20">
         {slides.map((_, i) => (
           <div
             key={i}
-            className={`h-[2px] w-8 transition-all duration-500 ${
+            className={`h-0.5 w-8 transition-all duration-500 ${
               i === index ? "bg-white" : "bg-white/30"
             }`}
           />

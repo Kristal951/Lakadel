@@ -31,7 +31,7 @@ export default function SidebarFilters() {
 
   return (
     <aside
-      className="w-[20%] hidden md:flex flex-col justify-between fixed bottom-0 left-0 p-4"
+      className="w-[20%] hidden md:flex flex-col justify-between border-0 border-r border-gray-100 fixed bottom-0 left-0 p-4"
       style={{
         height: "calc(100vh - 120px)",
         backgroundColor: "var(--background)",

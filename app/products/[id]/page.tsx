@@ -12,9 +12,10 @@ import PriceContainer from "@/components/shop/PriceContainer";
 import useUserStore from "@/store/userStore";
 import { CartItem } from "@/store/types";
 import { useRouter } from "next/navigation";
+import { cld } from "@/lib";
 
 type ProductPageProps = {
-  params: Promise<{ id: string }>; 
+  params: Promise<{ id: string }>;
 };
 
 export default function ProductPage({ params }: ProductPageProps) {
@@ -24,13 +25,13 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { fetchProducts, getProductById, loading, error } = useProductStore();
   const { addToCart } = useCartStore();
   const { showToast } = useToast();
-  
+
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>("");
   const [selectedColor, setSelectedColor] = useState<string | null>("");
   const { currency } = useUserStore();
-  const router = useRouter()
+  const router = useRouter();
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -42,10 +43,9 @@ export default function ProductPage({ params }: ProductPageProps) {
     };
     addToCart(item);
     showToast("Item added to cart!", "success");
-    router.push('/shopping-bag')
+    router.push("/shopping-bag");
   };
 
-  // 2. Simplified logic: Fetch product whenever 'id' changes
   useEffect(() => {
     if (!id) return;
 
@@ -78,12 +78,15 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   return (
     <section className="max-w-6xl mx-auto py-10 px-4 grid grid-cols-1 md:grid-cols-2 gap-10">
-      {/* ... rest of your JSX remains the same ... */}
       <div className="flex flex-col gap-8">
         <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100">
           {selectedImage ? (
             <Image
-              src={selectedImage}
+              src={
+                selectedImage.startsWith("http")
+                  ? cld(selectedImage, 500)
+                  : selectedImage
+              }
               alt={product.name}
               fill
               className="object-cover"
@@ -94,7 +97,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             </div>
           )}
         </div>
-        {/* Gallery Thumbnails */}
+
         {product.images && product.images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto">
             {product.images.map((img: string) => (
@@ -107,7 +110,12 @@ export default function ProductPage({ params }: ProductPageProps) {
                 }`}
                 onClick={() => setSelectedImage(img)}
               >
-                <Image src={img} alt={product.name} fill className="object-cover" />
+                <Image
+                  src={img}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                />
               </div>
             ))}
           </div>
@@ -115,12 +123,16 @@ export default function ProductPage({ params }: ProductPageProps) {
       </div>
 
       <div className="flex flex-col gap-6">
-        <div>
+        <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold">{product.name}</h1>
           <p className="opacity-70">{product.description}</p>
         </div>
 
-        <PriceContainer price={product.price} currency={currency} textSize="xl" />
+        <PriceContainer
+          price={product.price}
+          currency={currency}
+          textSize="xl"
+        />
 
         {product.sizes?.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -152,7 +164,9 @@ export default function ProductPage({ params }: ProductPageProps) {
                   key={color.hex}
                   style={{ backgroundColor: color.hex }}
                   className={`w-8 h-8 rounded-full border-2 transition ${
-                    selectedColor === color.name ? "border-(--accent,#B10E0E)" : "border-transparent"
+                    selectedColor === color.name
+                      ? "border-(--accent,#B10E0E)"
+                      : "border-transparent"
                   }`}
                   onClick={() => setSelectedColor(color.name)}
                 />

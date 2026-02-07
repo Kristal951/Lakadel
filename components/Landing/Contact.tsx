@@ -219,7 +219,7 @@ export default function Contact() {
 
             <button
               type="submit"
-              className="w-full sm:w-fit border flex items-center justify-center border-[#B10E0E] text-[#B10E0E] px-10 py-4 text-sm tracking-widest uppercase hover:bg-[#B10E0E] hover:text-white transition"
+              className="w-full border flex items-center justify-center border-[#B10E0E] text-[#B10E0E] px-10 py-4 text-sm tracking-widest uppercase hover:bg-[#B10E0E] hover:text-white transition"
             >
               {status === "loading" ? (
                 <Spinner w="5" h="5" />

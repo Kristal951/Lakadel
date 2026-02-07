@@ -29,7 +29,7 @@ const Header = () => {
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 h-18 flex items-center md:justify-between md:px-6 px-2 z-50 shadow-sm"
+      className="fixed top-0 left-0 right-0 h-18 flex items-center md:justify-between md:px-6 px-2 z-50 border-0 border-b border-gray-100"
       style={{
         background: "var(--background)",
         color: "var(--foreground)",
@@ -80,7 +80,7 @@ const Header = () => {
                 height={32}
                 className="rounded-full cursor-pointer hover:bg-foreground/10 transition-colors"
                 onClick={(e) => {
-                  e.stopPropagation();
+             
                   setOpen((prev) => !prev);
                 }}
               />
