@@ -63,7 +63,7 @@ export default function ProductsAdminPage() {
   }, [products, query, sortKey, sortDir]);
 
   return (
-    <div className="max-w-[1400px] mx-auto p-6 lg:p-10 space-y-8 min-h-screen">
+    <div className="max-w-350 mx-auto p-6 lg:p-10 space-y-8 min-h-screen">
       
       {/* 🚀 Top Action Bar */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -131,7 +131,7 @@ export default function ProductsAdminPage() {
                   <tr key={p.id} className="group hover:bg-muted/20 transition-all duration-300">
                     <td className="pl-10 pr-6 py-5">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border/50 overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border/50 overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                           {image ? (
                             <img src={image} alt="" className="w-full h-full object-cover" />
                           ) : (

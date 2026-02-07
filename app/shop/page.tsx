@@ -10,20 +10,22 @@ import SelectCountryModal from "@/components/ui/SelectCountryModal";
 import useUserStore from "@/store/userStore";
 
 export default function Shop() {
-  const [showModal, setShowModal] = useState(false);
   const { loading, error, fetchProducts, filteredAndSearchedProducts } =
     useProductStore();
   const { user } = useUserStore();
 
-  const productsToShow = filteredAndSearchedProducts();
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setShowModal(true);
-  }, [showModal]);
+  }, []);
+
+  const productsToShow = filteredAndSearchedProducts();
 
   if (loading) {
     return (
@@ -55,11 +57,8 @@ export default function Shop() {
       <SortButton />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
-        {productsToShow.map((product) => (
-          <ProductCard
-            key={product.id}
-            {...product}
-          />
+        {productsToShow.map((product, index) => (
+          <ProductCard key={product.id} index={index} {...product} />
         ))}
       </div>
 
