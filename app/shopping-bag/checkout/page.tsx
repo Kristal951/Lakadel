@@ -183,6 +183,8 @@ export default function GuestCheckoutPage() {
             quantity: i.quantity,
             selectedSize: i.selectedSize ?? null,
             selectedColor: i.selectedColor ?? null,
+            unitPrice: i.product.price,
+            lineTotal: i.product.price * i.quantity,
           })),
           subtotal,
           shippingFee,

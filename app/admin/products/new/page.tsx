@@ -501,7 +501,6 @@ export default function AddNewProductPage() {
             </div>
           </section>
 
-          {/* Color Picker */}
           <section className="space-y-6 border-t border-foreground/10 pt-8">
             <h2 className="text-xl font-bold">Product Colors</h2>
             <div className="flex flex-col gap-4">

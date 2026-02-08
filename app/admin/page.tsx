@@ -78,7 +78,7 @@ export default async function AdminDashboardPage() {
       </header>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-0">
         <StatCard
           title="Revenue Today"
           value={`₦${revenueToday.toLocaleString()}`}
@@ -157,18 +157,14 @@ export default async function AdminDashboardPage() {
                     className="group hover:bg-slate-50/80 transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span className="font-mono text-xs font-semibold text-foreground bg-background border border-foreground/20 px-2 py-1 rounded-md uppercase">
-                        #{o.id.slice(-6)}
+                      <span className="font-mono w-[40%] text-xs font-semibold truncate text-foreground bg-background border border-foreground/20 px-2 py-1 rounded-md uppercase">
+                        #{o.id.slice(0,5)}
                       </span>
                     </td>
 
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
-                          {(o.customerEmail ?? "NA")
-                            .substring(0, 2)
-                            .toUpperCase()}
-                        </div>
+                        {/* <img src={} alt="" /> */}
                         <span className="text-sm font-medium text-foreground">
                           {o.customerEmail ?? "—"}
                         </span>
