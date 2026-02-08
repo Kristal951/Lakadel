@@ -7,6 +7,7 @@ type StatCardProps = {
   icon: ComponentType<{ className?: string }>;
   trend?: string; // e.g. "+12%" or "vs last week"
   tone?: "emerald" | "indigo" | "amber" | "rose" | "slate";
+  trendColor? : string;
 };
 
 const TONE = {
@@ -42,78 +43,73 @@ const TONE = {
   },
 } as const;
 
-export function StatCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  tone = "slate",
-}: StatCardProps) {
-  const t = TONE[tone];
-
+export function StatCard({ title, value, icon: Icon, trend, trendColor = 'foreground'}: StatCardProps) {
   return (
-    <div
-      className={clsx(
-        "relative overflow-hidden rounded-3xl border border-foreground/10 bg-background",
-        "shadow-sm transition-all duration-200",
-        "hover:-translate-y-0.5 hover:shadow-md",
-        "ring-1",
-        t.ring,
-      )}
-    >
-      {/* soft glow */}
-      <div
-        className={clsx(
-          "pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-gradient-to-br blur-2xl",
-          t.glow,
-        )}
-      />
+   <div
+  className={clsx(
+    "group relative flex-1 overflow-hidden transition-all duration-300",
 
-      <div className="relative p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={clsx(
-                "grid h-11 w-11 place-items-center rounded-2xl",
-                "ring-1 ring-foreground/10",
-                t.chip,
-              )}
-            >
-              <Icon className="h-5 w-5" />
-            </div>
+    // 👉 Divider line (only right side)
+    "border-r border-foreground/10 last:border-r-0",
 
-            <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-foreground/50">
-                {title}
-              </p>
-              <h3 className="text-2xl font-extrabold tracking-tight text-foreground">
-                {value}
-              </h3>
-            </div>
-          </div>
-
-          {trend ? (
-            <span
-              className={clsx(
-                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold",
-                t.trend,
-              )}
-            >
-              {/* tiny arrow */}
-              <span className="text-[10px] leading-none">↗</span>
-              {trend}
-            </span>
-          ) : null}
+    // Subtle hover surface
+    "hover:bg-foreground/[0.02]"
+  )}
+>
+  <div className="relative h-full p-8">
+    <div className="flex items-start justify-between">
+      <div className="space-y-5">
+        
+        {/* Icon */}
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.03] shadow-sm">
+          <Icon className="h-5 w-5 text-foreground/70" />
         </div>
 
-        {/* subtle divider */}
-        <div className="mt-5 h-px w-full bg-gradient-to-r from-foreground/10 via-foreground/5 to-transparent" />
-
-        <p className="mt-4 text-sm font-medium text-foreground/60">
-          Updated just now
-        </p>
+        {/* Text */}
+        <div className="space-y-1">
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-foreground/40">
+            {title}
+          </p>
+          <h3 className="text-4xl font-semibold tracking-tighter text-foreground">
+            {value}
+          </h3>
+        </div>
       </div>
+
+      {/* Trend pill */}
+      {trend && (
+        <div className={`flex items-center gap-1 rounded-full border border-${trendColor} bg-foreground/[0.03] px-2.5 py-1 text-[10px] font-black text-foreground/60 transition-colors group-hover:border-foreground/20`}>
+          <span className={`text-${trendColor}`}>{trend}</span>
+          <svg
+            className={`h-2.5 w-2.5 opacity-60 text-${trendColor}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+              d="M5 10l7-7m0 0l7 7m-7-7v18"
+            />
+          </svg>
+        </div>
+      )}
     </div>
+
+    {/* Mini bars */}
+    {/* <div className="mt-8 flex h-8 items-end gap-1.5 opacity-20 transition-opacity group-hover:opacity-50">
+      {[30, 60, 40, 80, 50, 90, 70].map((h, i) => (
+        <div
+          key={i}
+          className="flex-1 bg-foreground rounded-full"
+          style={{ height: `${h}%` }}
+        />
+      ))}
+    </div> */}
+  </div>
+</div>
+
   );
 }
 

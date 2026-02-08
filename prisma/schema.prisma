@@ -114,6 +114,8 @@ model CartItem {
 model Order {
   id              String      @id @default(uuid())
   userId          String?
+  guestId         String?
+  customerName    String?   
   total           Float
   createdAt       DateTime    @default(now())
   currency        String      @default("NGN")
@@ -128,6 +130,7 @@ model Order {
   orderItems      OrderItem[]
   shippingFee Int @default(0)
   subTotal    Int @default(0)
+  paymentMethod    String?
 }
 
 model OrderItem {
@@ -140,12 +143,17 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   selectedColor String?
   selectedSize  String?
+  unitPriceKobo Int @default(0)     
+  lineTotalKobo Int @default(0)     
 }
 
 enum OrderStatus {
   PENDING
   PAID
   FAILED
+  SHIPPED
+  DELIVERED
+  REFUNDED
 }
 
 enum AuthProvider {

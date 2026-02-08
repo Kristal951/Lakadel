@@ -93,7 +93,6 @@ export default function SuccessClient() {
   const isPaid = status === "PAID";
   const isFailed = status === "FAILED";
 
-  // ✅ IMPORTANT: avoid dynamic Tailwind class strings (see fix #2 below)
   const theme = {
     PAID: { ring: "bg-emerald-500", badgeBg: "bg-emerald-500/10", badgeBorder: "border-emerald-500/20", badgeText: "text-emerald-600", label: "Paid", icon: <CheckCircle2 className="w-8 h-8" /> },
     FAILED: { ring: "bg-red-500",     badgeBg: "bg-red-500/10",     badgeBorder: "border-red-500/20",     badgeText: "text-red-600",     label: "Failed", icon: <XCircle className="w-8 h-8" /> },

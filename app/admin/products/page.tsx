@@ -21,13 +21,29 @@ import clsx from "clsx";
 
 function normalizeStatus(status?: string) {
   const s = String(status || "").toUpperCase();
-  const base = "px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider";
-  
-  if (s === "ACTIVE") return { label: "Active", cls: `${base} bg-emerald-500/10 text-emerald-600 border-emerald-500/20` };
-  if (s === "DRAFT") return { label: "Draft", cls: `${base} bg-amber-500/10 text-amber-600 border-amber-500/20` };
-  if (s === "ARCHIVED") return { label: "Archived", cls: `${base} bg-rose-500/10 text-rose-600 border-rose-500/20` };
-  
-  return { label: s || "Active", cls: `${base} bg-slate-500/10 text-slate-600 border-slate-500/20` };
+  const base =
+    "px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider";
+
+  if (s === "ACTIVE")
+    return {
+      label: "Active",
+      cls: `${base} bg-emerald-500/10 text-emerald-600 border-emerald-500/20`,
+    };
+  if (s === "DRAFT")
+    return {
+      label: "Draft",
+      cls: `${base} bg-amber-500/10 text-amber-600 border-amber-500/20`,
+    };
+  if (s === "ARCHIVED")
+    return {
+      label: "Archived",
+      cls: `${base} bg-rose-500/10 text-rose-600 border-rose-500/20`,
+    };
+
+  return {
+    label: s || "Active",
+    cls: `${base} bg-slate-500/10 text-slate-600 border-slate-500/20`,
+  };
 }
 
 export default function ProductsAdminPage() {
@@ -37,39 +53,49 @@ export default function ProductsAdminPage() {
   const [sortKey, setSortKey] = useState<"name" | "price" | "stock">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = Array.isArray(products) ? products : [];
-    
-    let result = !q ? list : list.filter((p: any) => {
-      const name = String(p?.name ?? p?.title ?? "").toLowerCase();
-      const sku = String(p?.sku ?? p?.code ?? "").toLowerCase();
-      const category = String(p?.category ?? p?.categoryName ?? "").toLowerCase();
-      return name.includes(q) || sku.includes(q) || category.includes(q);
-    });
+
+    let result = !q
+      ? list
+      : list.filter((p: any) => {
+          const name = String(p?.name ?? p?.title ?? "").toLowerCase();
+          const sku = String(p?.sku ?? p?.code ?? "").toLowerCase();
+          const category = String(
+            p?.category ?? p?.categoryName ?? "",
+          ).toLowerCase();
+          return name.includes(q) || sku.includes(q) || category.includes(q);
+        });
 
     return [...result].sort((a: any, b: any) => {
       const getVal = (x: any) => {
-        if (sortKey === "name") return String(x?.name ?? x?.title ?? "").toLowerCase();
+        if (sortKey === "name")
+          return String(x?.name ?? x?.title ?? "").toLowerCase();
         if (sortKey === "price") return Number(x?.price ?? x?.amount ?? 0);
         return Number(x?.stock ?? x?.quantity ?? 0);
       };
       const av = getVal(a);
       const bv = getVal(b);
-      return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+      return sortDir === "asc" ? (av > bv ? 1 : -1) : av < bv ? 1 : -1;
     });
   }, [products, query, sortKey, sortDir]);
 
   return (
     <div className="max-w-350 mx-auto p-6 lg:p-10 space-y-8 min-h-screen">
-      
       {/* 🚀 Top Action Bar */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Catalogue</h1>
-          <p className="text-muted-foreground font-medium">Manage and monitor your inventory.</p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
+            Catalogue
+          </h1>
+          <p className="text-muted-foreground font-medium">
+            Manage and monitor your inventory.
+          </p>
         </div>
         <Link
           href="/admin/products/new"
@@ -92,70 +118,111 @@ export default function ProductsAdminPage() {
           />
         </div>
         <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto">
-           <button 
-             onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-             className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-border hover:bg-muted/50 transition font-bold text-xs"
-           >
-             <ArrowUpDown className="w-4 h-4" />
-             {sortDir.toUpperCase()}
-           </button>
-           <button className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-border hover:bg-muted/50 transition font-bold text-xs">
-             <Filter className="w-4 h-4" />
-             Filter
-           </button>
+          <button
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-border hover:bg-muted/50 transition font-bold text-xs"
+          >
+            <ArrowUpDown className="w-4 h-4" />
+            {sortDir.toUpperCase()}
+          </button>
+          <button className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-border hover:bg-muted/50 transition font-bold text-xs">
+            <Filter className="w-4 h-4" />
+            Filter
+          </button>
         </div>
       </section>
 
       {/* 📦 Table Container */}
-      <div className="bg-card rounded-[2.5rem] border border-border/60 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-[2.5rem] border border-foreground/30 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-border/50 text-left bg-muted/10">
-                <th className="pl-10 pr-6 py-6 text-[11px] font-black uppercase tracking-widest text-muted-foreground">Product Detail</th>
-                <th className="px-6 py-6 text-[11px] font-black uppercase tracking-widest text-muted-foreground text-center">Price</th>
-                <th className="px-6 py-6 text-[11px] font-black uppercase tracking-widest text-muted-foreground text-center">Inventory</th>
-                <th className="px-6 py-6 text-[11px] font-black uppercase tracking-widest text-muted-foreground text-center">Status</th>
-                <th className="pl-6 pr-10 py-6 text-[11px] font-black uppercase tracking-widest text-muted-foreground text-right">Actions</th>
+              <tr className="border-b border-foreground/30 text-left bg-muted/10">
+                <th className="pl-10 pr-6 py-6 text-[11px] font-black uppercase tracking-widest text-foreground/70">
+                  Product Detail
+                </th>
+                <th className="px-6 py-6 text-[11px] font-black uppercase tracking-widest text-foreground/70 text-center">
+                  Price
+                </th>
+                <th className="px-6 py-6 text-[11px] font-black uppercase tracking-widest text-foreground/70 text-center">
+                  Inventory
+                </th>
+                <th className="px-6 py-6 text-[11px] font-black uppercase tracking-widest text-foreground/70 text-center">
+                  Status
+                </th>
+                <th className="pl-6 pr-10 py-6 text-[11px] font-black uppercase tracking-widest text-foreground/70 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-foreground/40">
               {filtered.map((p: any) => {
                 const status = normalizeStatus(p?.status);
-                const image = (Array.isArray(p?.images) ? p.images[0] : p?.images) || null;
+                const image =
+                  (Array.isArray(p?.images) ? p.images[0] : p?.images) || null;
                 const stock = Number(p?.stock ?? p?.totalStock ?? 0);
                 const stockMax = 100; // Mock or real max
                 const pct = Math.min(100, Math.round((stock / stockMax) * 100));
 
                 return (
-                  <tr key={p.id} className="group hover:bg-muted/20 transition-all duration-300">
+                  <tr
+                    key={p.id}
+                    className="group hover:bg-muted/20 transition-all duration-300"
+                  >
                     <td className="pl-10 pr-6 py-5">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border/50 overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                           {image ? (
-                            <img src={image} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={image}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center"><Package className="w-5 h-5 opacity-20"/></div>
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="w-5 h-5 opacity-20" />
+                            </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-bold truncate text-foreground group-hover:text-primary transition-colors">{p.name || p.title}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{p.category || 'Lifestyle'}</p>
+                          <p className="text-sm font-bold truncate text-foreground group-hover:text-primary transition-colors">
+                            {p.name || p.title}
+                          </p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                            {p.category || ""}
+                          </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className="text-sm font-black text-foreground">
-                        {formatPrice(p.price, p.currency || 'NGN', rates?.[p.currency || 'NGN'])}
+                        {formatPrice(
+                          p.price,
+                          p.currency || "NGN",
+                          rates?.[p.currency || "NGN"],
+                        )}
                       </span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-col items-center gap-2">
-                        <span className={clsx("text-[10px] font-black tracking-tighter", stock < 10 ? "text-rose-500" : "text-muted-foreground")}>
-                           {stock} IN STOCK
+                        <span
+                          className={clsx(
+                            "text-base font-black tracking-tighter",
+                            stock < 10
+                              ? "text-rose-500"
+                              : "text-green-500",
+                          )}
+                        >
+                          {stock} 
                         </span>
                         <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className={clsx("h-full rounded-full transition-all", stock < 10 ? "bg-rose-500" : "bg-primary")} style={{ width: `${pct}%` }} />
+                          <div
+                            className={clsx(
+                              "h-full rounded-full transition-all",
+                              stock < 10 ? "bg-rose-500" : "bg-primary",
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
                       </div>
                     </td>
@@ -164,7 +231,10 @@ export default function ProductsAdminPage() {
                     </td>
                     <td className="pl-6 pr-10 py-5">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/products/${p.id}/edit`} className="p-2.5 rounded-xl border border-border bg-card hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm">
+                        <Link
+                          href={`/admin/products/${p.id}/edit`}
+                          className="p-2.5 rounded-xl border border-border bg-card hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
+                        >
                           <Edit2 className="w-4 h-4" />
                         </Link>
                         <button className="p-2.5 rounded-xl border border-border bg-card hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-sm">
@@ -177,18 +247,32 @@ export default function ProductsAdminPage() {
               })}
             </tbody>
           </table>
-          
-          {/* 🏜️ Empty State */}
+
           {!loading && filtered.length === 0 && (
             <div className="py-32 flex flex-col items-center justify-center text-center">
               <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                 <Package className="w-10 h-10 text-muted-foreground opacity-20" />
               </div>
               <h3 className="text-xl font-bold italic">No items found</h3>
-              <p className="text-muted-foreground text-sm mt-1 mb-6">Try adjusting your search or filters.</p>
-              <button onClick={() => setQuery("")} className="text-xs font-black uppercase tracking-widest text-primary border-b-2 border-primary/20 pb-1 hover:border-primary transition-all">Clear All Filters</button>
+              <p className="text-muted-foreground text-sm mt-1 mb-6">
+                Try adjusting your search or filters.
+              </p>
+              <button
+                onClick={() => setQuery("")}
+                className="text-xs font-black uppercase tracking-widest text-primary border-b-2 border-primary/20 pb-1 hover:border-primary transition-all"
+              >
+                Clear All Filters
+              </button>
             </div>
           )}
+
+          {
+          loading && (
+            <div className="w-full h-125 flex items-center justify-center">
+               <Spinner w="10" h="10" />
+            </div>
+          )
+          }
         </div>
       </div>
     </div>

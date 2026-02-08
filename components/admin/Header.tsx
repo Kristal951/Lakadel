@@ -22,14 +22,14 @@ export default function AdminHeader() {
 
   return (
     <header className="fixed top-0 z-40 left-72 right-0 border-b border-foreground/5 bg-background">
-      <div className="flex h-16 items-center justify-between px-8">
+      <div className="flex h-16 items-center justify-end px-8">
         
-        {/* Page Title */}
+        {/* Page Title
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
             {title}
           </h1>
-        </div>
+        </div> */}
 
         {/* Actions Area */}
         <div className="flex items-center gap-2 md:gap-4">
