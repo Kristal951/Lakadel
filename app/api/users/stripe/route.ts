@@ -2,27 +2,34 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 
+export const runtime = "nodejs";
+
+type Body = {
+  orderId: string;
+  userId?: string | null;
+  guestId?: string | null;
+  email?: string;
+};
+
+function getAppUrl() {
+  const url =
+    process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL;
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `https://${url}`;
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = (await req.json().catch(() => null)) as Body | null;
+    if (!body)
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-    const {
-      items: cartItems,
-      currency,
-      email,
-      userId,
-      guestId,
-    }: {
-      items: { productId: string; quantity: number }[];
-      currency?: string;
-      email?: string;
-      userId?: string | null;
-      guestId?: string | null;
-    } = body;
+    const { orderId, userId, guestId, email } = body;
 
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+    if (!orderId) {
       return NextResponse.json(
-        { error: "cartItems required" },
+        { error: "orderId is required" },
         { status: 400 },
       );
     }
@@ -33,53 +40,74 @@ export async function POST(req: Request) {
       );
     }
 
-    for (const i of cartItems) {
-      if (!i.productId || !Number.isInteger(i.quantity) || i.quantity < 1) {
-        return NextResponse.json(
-          { error: "Invalid cartItems" },
-          { status: 400 },
-        );
-      }
+    const appUrl = getAppUrl();
+    if (!appUrl) {
+      return NextResponse.json(
+        { error: "Server misconfigured: APP_URL/NEXTAUTH_URL missing" },
+        { status: 500 },
+      );
     }
 
-    const cur = (currency || "NGN").toLowerCase();
-
-    // ----------------------
-    // fetch products from db
-    // ----------------------
-    const productIds = [...new Set(cartItems.map((i) => i.productId))];
-
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, name: true, price: true, images: true },
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItems: {
+          select: {
+            productId: true,
+            quantity: true,
+          },
+        },
+      },
     });
 
-    const productMap = new Map(products.map((p) => [p.id, p]));
+    if (!order)
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-    const missing = productIds.filter((id) => !productMap.has(id));
-    if (missing.length) {
+    if (userId && order.userId && order.userId !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+    if (!userId && guestId && order.guestId && order.guestId !== guestId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    if (order.status === "PAID") {
       return NextResponse.json(
-        { error: "Some products no longer exist", missing },
+        { error: "Order already paid" },
+        { status: 409 },
+      );
+    }
+
+    if (!order.orderItems?.length) {
+      return NextResponse.json(
+        { error: "Order has no items" },
         { status: 400 },
       );
     }
 
-    // ----------------------
-    // build stripe line items
-    // ----------------------
-    const line_items = cartItems.map((i) => {
-      const p = productMap.get(i.productId)!;
+    const currency = (order.currency || "NGN").toLowerCase();
 
-      // Stripe expects amount in the smallest currency unit.
-      // If you're using NGN in Stripe, typically it's in kobo => multiply by 100.
-      const unit_amount = Math.round(Number(p.price) * 100);
+    const productIds = [...new Set(order.orderItems.map((i) => i.productId))];
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, images: true, price: true },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const line_items = order.orderItems.map((i) => {
+      const p = productMap.get(i.productId);
+      if (!p) throw new Error("Product missing for an order item");
+
+      const unit_amount = Math.round(Number(p.price) * 100); // fallback to product price
+      if (!Number.isFinite(unit_amount) || unit_amount <= 0)
+        throw new Error("Invalid unit price");
 
       return {
         price_data: {
-          currency: cur,
+          currency,
           product_data: {
             name: p.name,
             images: p.images?.length ? [p.images[0]] : [],
+            metadata: { productId: p.id },
           },
           unit_amount,
         },
@@ -87,25 +115,43 @@ export async function POST(req: Request) {
       };
     });
 
-    // optional: include metadata so you can identify guest/user later in webhook
-    const session = await stripe.checkout.sessions.create({
-      // payment_method_types: ["card"],
-      mode: "payment",
-      customer_email: email || undefined,
-      line_items,
-      metadata: {
-        userId: userId || "",
-        guestId: guestId || "",
+    const idempotencyKey = `checkout:${order.id}`;
+
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        customer_email:
+          (email || order.customerEmail || "").trim().toLowerCase() ||
+          undefined,
+
+        line_items,
+
+        client_reference_id: order.id,
+        metadata: {
+          orderId: order.id,
+          userId: order.userId || "",
+          guestId: order.guestId || "",
+        },
+
+        success_url: `${appUrl}/checkout/success?provider=stripe&orderId=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/shopping-bag`,
       },
-      success_url: `${process.env.NEXTAUTH_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/shopping-bag`,
+      { idempotencyKey },
+    );
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentMethod: "STRIPE",
+        paymentRef: session.id,
+      },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (e: any) {
-    console.error(e);
+    console.error("Stripe init error:", e);
     return NextResponse.json(
-      { error: e?.message || "Failed to create Stripe session" },
+      { error: e?.message || "Failed to initialize Stripe" },
       { status: 500 },
     );
   }

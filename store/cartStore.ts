@@ -7,6 +7,10 @@ const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
 
+      // ✅ add these
+      loggingOut: false,
+      hydrated: false,
+
       addToCart: (newItem) => {
         set((state) => {
           const exists = state.items.find(
@@ -72,14 +76,26 @@ const useCartStore = create<CartState>()(
         });
       },
 
-      clearCart: () => set({ items: [] }),
+      // ✅ clear also resets flags
+      clearCart: () => set({ items: [], hydrated: false }),
+
       setItems: (items: any[]) => set({ items }),
 
-      totalItems: () =>
-        get().items.reduce((sum, i) => sum + i.quantity, 0),
+      // ✅ now it will actually exist
+      setLoggingOut: (v: boolean) => set({ loggingOut: v }),
+
+      // ✅ use after fetching server cart on login
+      setHydrated: (v: boolean) => set({ hydrated: v }),
+
+      totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),
     {
       name: "cart-storage",
+
+      // ✅ only persist items (don’t persist loggingOut/hydrated)
+      partialize: (state) => ({
+        items: state.items,
+      }),
     }
   )
 );

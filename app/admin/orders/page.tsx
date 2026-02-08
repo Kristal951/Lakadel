@@ -188,7 +188,7 @@ export default async function AdminOrdersPage({
       </header>
 
       {/* Filters */}
-      <div className="rounded-[2rem] border border-foreground/10 bg-background p-4 md:p-6">
+      <div className="rounded-4xl border border-foreground/10 bg-background p-4 md:p-6">
         <form className="flex flex-col md:flex-row gap-3 md:items-center">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
@@ -220,7 +220,7 @@ export default async function AdminOrdersPage({
           {(q || status) && (
             <Link
               href="/admin/orders"
-              className="rounded-2xl border border-foreground/10 px-5 py-3 text-sm font-bold text-foreground/70 hover:bg-foreground/[0.02]"
+              className="rounded-2xl border border-foreground/10 px-5 py-3 text-sm font-bold text-foreground/70 hover:bg-foreground/2"
             >
               Clear
             </Link>
@@ -257,8 +257,8 @@ export default async function AdminOrdersPage({
       </div>
 
       {/* Table */}
-      <div className="rounded-[2rem] border border-foreground/10 bg-background overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b border-foreground/5 bg-foreground/[0.02]">
+      <div className="rounded-4xl border border-foreground/10 bg-background overflow-hidden">
+        <div className="flex items-center justify-between px-8 py-5 border-b border-foreground/5 bg-foreground/2">
           <p className="text-xs font-bold uppercase tracking-widest text-foreground/40">
             {totalCount.toLocaleString()} order(s)
           </p>
@@ -269,7 +269,7 @@ export default async function AdminOrdersPage({
 
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-foreground/5 bg-foreground/[0.02]">
+            <tr className="border-b border-foreground/5 bg-foreground/2">
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-foreground/40">
                 Order
               </th>
@@ -300,14 +300,14 @@ export default async function AdminOrdersPage({
               orders.map((o) => (
                 <tr
                   key={o.id}
-                  className="group hover:bg-foreground/[0.01] transition-colors"
+                  className="group hover:bg-foreground/1 transition-colors"
                 >
                   <td className="px-8 py-6">
-                    <div className="flex flex-col">
+                    <div className="flex w-50 flex-col">
                       <span className="text-sm font-semibold text-foreground">
                         #{o.id.slice(0, 8).toUpperCase()}
                       </span>
-                      <span className="text-xs text-foreground/40 font-mono">
+                      <span className="text-xs text-foreground/40 font-mono truncate">
                         {o.paymentRef ?? "—"}
                       </span>
                     </div>
@@ -358,7 +358,7 @@ export default async function AdminOrdersPage({
             className={`rounded-2xl px-4 py-2 text-sm font-bold border border-foreground/10 ${
               safePage <= 1
                 ? "pointer-events-none opacity-40"
-                : "hover:bg-foreground/[0.02]"
+                : "hover:bg-foreground/2"
             }`}
           >
             Prev
@@ -382,7 +382,7 @@ export default async function AdminOrdersPage({
             className={`rounded-2xl px-4 py-2 text-sm font-bold border border-foreground/10 ${
               safePage >= totalPages
                 ? "pointer-events-none opacity-40"
-                : "hover:bg-foreground/[0.02]"
+                : "hover:bg-foreground/2"
             }`}
           >
             Next

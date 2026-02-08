@@ -31,6 +31,8 @@ export interface ShippingAddress {
 
 export interface CartState {
   items: CartItem[];
+  loggingOut: boolean,
+  hydrated: boolean
 
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string, color?: string, size?: string) => void;
@@ -44,6 +46,7 @@ export interface CartState {
   clearCart: () => void;
 
   totalItems: () => number;
+  setLoggingOut: (l: boolean) => void
 }
 
 export interface ProductState {

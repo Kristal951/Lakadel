@@ -154,9 +154,9 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Items */}
-        <section className="lg:col-span-2 rounded-[2rem] border border-foreground/10 bg-background overflow-hidden">
+        <section className="lg:col-span-2 rounded-4xl border border-foreground/10 bg-background overflow-hidden">
           {/* Header */}
-          <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/[0.02] flex items-center justify-between">
+          <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/2 flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/40">
               Items Purchased
             </h2>
@@ -183,7 +183,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                   {/* LEFT: Image + Info */}
                   <div className="flex items-start gap-5">
                     {/* Product Image */}
-                    <div className="relative h-20 w-20 rounded-2xl overflow-hidden border border-foreground/10 bg-foreground/[0.03]">
+                    <div className="relative h-20 w-20 rounded-2xl overflow-hidden border border-foreground/10 bg-foreground/3">
                       <Image
                         src={image}
                         alt={product?.name ?? "Product"}
@@ -250,8 +250,8 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
         {/* Right column */}
         <aside className="space-y-6">
           {/* Summary */}
-          <section className="rounded-[2rem] border border-foreground/10 bg-background overflow-hidden">
-            <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/[0.02]">
+          <section className="rounded-4xl border border-foreground/10 bg-background overflow-hidden">
+            <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/2">
               <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/40">
                 Summary
               </h2>
@@ -323,8 +323,8 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
           </section>
 
           {/* Customer */}
-          <section className="rounded-[2rem] border border-foreground/10 bg-background overflow-hidden">
-            <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/[0.02]">
+          <section className="rounded-4xl border border-foreground/10 bg-background overflow-hidden">
+            <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/2">
               <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/40">
                 Customer
               </h2>

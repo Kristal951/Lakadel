@@ -26,10 +26,10 @@ export default function AdminCustomersPage() {
           <input 
             type="text" 
             placeholder="Search by name, email, or ID..." 
-            className="w-full rounded-2xl border border-foreground/10 bg-foreground/[0.02] py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-foreground/5 transition-all"
+            className="w-full rounded-2xl border border-foreground/10 bg-foreground/2 py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-foreground/5 transition-all"
           />
         </div>
-        <button className="flex items-center gap-2 rounded-2xl border border-foreground/10 bg-background px-5 py-3 text-sm font-semibold text-foreground/70 hover:bg-foreground/[0.03] transition-all">
+        <button className="flex items-center gap-2 rounded-2xl border border-foreground/10 bg-background px-5 py-3 text-sm font-semibold text-foreground/70 hover:bg-foreground/3 transition-all">
           <Filter className="h-4 w-4" />
           Filters
         </button>
@@ -39,7 +39,7 @@ export default function AdminCustomersPage() {
       <div className="rounded-[2.5rem] border border-foreground/10 bg-background overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-foreground/5 bg-foreground/[0.01]">
+            <tr className="border-b border-foreground/5 bg-foreground/1">
               <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70">Customer</th>
               <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70">Status</th>
               <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70">Total Spent</th>
@@ -49,11 +49,11 @@ export default function AdminCustomersPage() {
           </thead>
           <tbody className="divide-y divide-foreground/5">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <tr key={i} className="group hover:bg-foreground/[0.01] transition-colors">
+              <tr key={i} className="group hover:bg-foreground/1 transition-colors">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
                     {/* User Avatar Placeholder */}
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-foreground/10 to-foreground/5 flex items-center justify-center text-xs font-bold text-foreground/40">
+                    <div className="h-10 w-10 rounded-full bg-linear-to-br from-foreground/10 to-foreground/5 flex items-center justify-center text-xs font-bold text-foreground/40">
                       JD
                     </div>
                     <div className="flex flex-col">
