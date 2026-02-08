@@ -10,7 +10,6 @@ export default function SessionSync() {
   const setUser = useUserStore((s) => s.setUser);
   const logout = useUserStore((s) => s.logout);
   const setCurrency = useUserStore((s) => s.setCurrency);
-  const router = useRouter();
 
   useEffect(() => {
     if (status === "loading") return;

@@ -70,22 +70,23 @@ export async function POST(req: Request) {
               cartId_productId_selectedColor_selectedSize: {
                 cartId: cartRow.id,
                 productId: item.productId,
-                // IMPORTANT: use nulls consistently (NOT '')
-                selectedColor: item.selectedColor ?? "",
-                selectedSize: item.selectedSize ?? "",
+                selectedColor: item.selectedColor || '',
+                selectedSize: item.selectedSize || '',
               },
             },
             create: {
               cartId: cartRow.id,
               productId: item.productId,
               quantity: item.quantity,
-              selectedColor: item.selectedColor,
-              selectedSize: item.selectedSize,
+              selectedColor: item.selectedColor ?? null,
+              selectedSize: item.selectedSize ?? null,
               createdAt: now,
               updatedAt: now,
             },
             update: {
-              quantity: { increment: item.quantity }, // ✅ no read needed
+              quantity: item.quantity,
+              selectedColor: item.selectedColor ?? null,
+              selectedSize: item.selectedSize ?? null,
               updatedAt: now,
             },
           });

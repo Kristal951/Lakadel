@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/authOptions";
 
 export const runtime = "nodejs";
 
+type Mode = "REPLACE" | "CLEAR";
+
 type Item = {
   productId: string;
   quantity: number;
@@ -22,6 +24,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
+    const mode: Mode = body?.mode === "CLEAR" ? "CLEAR" : "REPLACE";
     const items: Item[] = Array.isArray(body?.items) ? body.items : [];
 
     // normalize
@@ -34,7 +37,31 @@ export async function PUT(req: Request) {
         selectedSize: i.selectedSize ? String(i.selectedSize) : null,
       }));
 
-    // dedupe + sum quantities by (productId, selectedColor, selectedSize)
+    // ✅ SAFETY NET:
+    // If client sends empty list in REPLACE mode, treat as "no-op" (do NOT wipe server cart)
+    // This prevents logout/login races from clearing carts.
+    if (mode !== "CLEAR" && raw.length === 0) {
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+        include: {
+          items: {
+            select: {
+              productId: true,
+              quantity: true,
+              selectedColor: true,
+              selectedSize: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({
+        cart: cart ?? { id: null, items: [] },
+        ignoredEmptyReplace: true,
+      });
+    }
+
+    // Dedup
     const dedupMap = new Map<string, (typeof raw)[number]>();
     for (const it of raw) {
       const k = `${it.productId}::${it.selectedColor ?? ""}::${it.selectedSize ?? ""}`;
@@ -44,7 +71,7 @@ export async function PUT(req: Request) {
     }
     const clean = Array.from(dedupMap.values());
 
-    // 1) Ensure cart exists (NOT inside interactive tx)
+    // Ensure cart exists
     const cartRow = await prisma.cart.upsert({
       where: { userId },
       create: { userId },
@@ -52,7 +79,28 @@ export async function PUT(req: Request) {
       select: { id: true },
     });
 
-    // 2) Validate product IDs once (optional but good)
+    // If CLEAR: delete and return
+    if (mode === "CLEAR") {
+      await prisma.cartItem.deleteMany({ where: { cartId: cartRow.id } });
+
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+        include: {
+          items: {
+            select: {
+              productId: true,
+              quantity: true,
+              selectedColor: true,
+              selectedSize: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({ cart });
+    }
+
+    // Validate products
     let insertData: Array<{
       cartId: string;
       productId: string;
@@ -80,20 +128,15 @@ export async function PUT(req: Request) {
         }));
     }
 
-    // 3) Replace strategy in a short batch transaction (much more reliable than interactive tx)
+    // ✅ Replace only when we have a non-empty payload (guaranteed by earlier guard)
     await prisma.$transaction([
       prisma.cartItem.deleteMany({ where: { cartId: cartRow.id } }),
-      ...(insertData.length
-        ? [
-            prisma.cartItem.createMany({
-              data: insertData,
-              skipDuplicates: true,
-            }),
-          ]
-        : []),
+      prisma.cartItem.createMany({
+        data: insertData,
+        skipDuplicates: true,
+      }),
     ]);
 
-    // 4) Return fresh cart
     const cart = await prisma.cart.findUnique({
       where: { userId },
       include: {
@@ -113,8 +156,7 @@ export async function PUT(req: Request) {
     if (e?.code === "P2028") {
       return NextResponse.json(
         {
-          error:
-            "Cart update failed (database busy). Please retry in a moment.",
+          error: "Cart update failed (database busy). Please retry in a moment.",
           code: "P2028",
         },
         { status: 503 },

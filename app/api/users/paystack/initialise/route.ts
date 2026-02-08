@@ -2,85 +2,96 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { paystackInitialize } from "@/lib/paystack";
 
+export const runtime = "nodejs";
+
+type Body = {
+  orderId: string;
+  userId?: string | null;
+  guestId?: string | null;
+};
+
+function getBaseUrl() {
+  const base =
+    process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL;
+
+  if (!base) return null;
+  if (base.startsWith("http://") || base.startsWith("https://")) return base;
+  return `https://${base}`;
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = (await req.json().catch(() => null)) as Body | null;
     const orderId = typeof body?.orderId === "string" ? body.orderId : "";
+    const userId = body?.userId ?? null;
+    const guestId = body?.guestId ?? null;
 
     if (!orderId) {
       return NextResponse.json({ error: "orderId required" }, { status: 400 });
     }
 
-    const baseUrl =
-      process.env.PAYSTACK_CALLBACK_URL || process.env.NEXT_PUBLIC_APP_URL;
-
+    const baseUrl = getBaseUrl();
     if (!baseUrl) {
-      throw new Error("Missing PAYSTACK_CALLBACK_URL or NEXT_PUBLIC_APP_URL");
-    }
-
-    const callbackUrl =
-      baseUrl.replace(/\/$/, "") + `/success?orderId=${orderId}`;
-
-    if (!callbackUrl || callbackUrl.includes("undefined")) {
       return NextResponse.json(
-        { error: "PAYSTACK_CALLBACK_URL is not set" },
+        { error: "Missing PAYSTACK_CALLBACK_URL / APP_URL / NEXTAUTH_URL" },
         { status: 500 },
       );
     }
 
-    const result = await prisma.$transaction(
-      async (tx) => {
-        const order = await tx.order.findUnique({
-          where: { id: orderId },
-          select: {
-            id: true,
-            status: true,
-            customerEmail: true,
-            totalKobo: true,
-            paymentRef: true,
-          },
-        });
+    const callbackUrl =
+      baseUrl.replace(/\/$/, "") +
+      `/checkout/success?provider=paystack&orderId=${encodeURIComponent(orderId)}`;
 
-        if (!order) {
-          return { kind: "not_found" as const };
-        }
+    const result = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        select: {
+          id: true,
+          status: true,
+          customerEmail: true,
+          totalKobo: true,
+          userId: true,
+          guestId: true,
+        },
+      });
 
-        if (order.status === "PAID") {
-          return { kind: "already_paid" as const };
-        }
-        if (order.paymentRef) {
-          return { kind: "reuse" as const, reference: order.paymentRef };
-        }
+      if (!order) return { kind: "not_found" as const };
 
-        const init = await paystackInitialize({
-          email: order.customerEmail,
-          amountKobo: order.totalKobo,
-          callback_url: callbackUrl,
-          metadata: { orderId: order.id, app: "Lakadel" },
-        });
+      if (order.status === "PAID") return { kind: "already_paid" as const };
 
-        const reference = init?.data?.reference as string | undefined;
-        const authorization_url = init?.data?.authorization_url as
-          | string
-          | undefined;
+      if (userId && order.userId && order.userId !== userId) {
+        return { kind: "unauthorized" as const };
+      }
+      if (!userId && guestId && order.guestId && order.guestId !== guestId) {
+        return { kind: "unauthorized" as const };
+      }
 
-        if (!reference || !authorization_url) {
-          throw new Error("Paystack initialize did not return reference/url");
-        }
+      const init = await paystackInitialize({
+        email: order.customerEmail,
+        amountKobo: order.totalKobo,
+        callback_url: callbackUrl,
+        metadata: { orderId: order.id, app: "Lakadel" },
+      });
 
-        await tx.order.update({
-          where: { id: order.id },
-          data: { paymentRef: reference },
-        });
+      const reference = init?.data?.reference as string | undefined;
+      const authorization_url = init?.data?.authorization_url as
+        | string
+        | undefined;
 
-        return {
-          kind: "new" as const,
-          reference,
-          authorization_url,
-        };
-      },
-      { maxWait: 10_000, timeout: 20_000 },
-    );
+      if (!reference || !authorization_url) {
+        throw new Error("Paystack initialize did not return reference/url");
+      }
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          paymentRef: reference,
+          paymentMethod: "PAYSTACK",
+        },
+      });
+
+      return { kind: "ok" as const, reference, authorization_url };
+    });
 
     if (result.kind === "not_found") {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -89,35 +100,12 @@ export async function POST(req: Request) {
     if (result.kind === "already_paid") {
       return NextResponse.json(
         { error: "Order already paid" },
-        { status: 400 },
+        { status: 409 },
       );
     }
-    if (result.kind === "reuse") {
-      const order = await prisma.order.findUnique({
-        where: { id: orderId },
-        select: {
-          customerEmail: true,
-          totalKobo: true,
-          id: true,
-          paymentRef: true,
-        },
-      });
 
-      const init = await paystackInitialize({
-        email: order!.customerEmail,
-        amountKobo: order!.totalKobo,
-        callback_url: callbackUrl,
-        metadata: { orderId, app: "Lakadel", reuse: true },
-      });
-
-      const authorization_url = init?.data?.authorization_url as
-        | string
-        | undefined;
-      return NextResponse.json({
-        reference: order!.paymentRef,
-        authorization_url,
-        reused: true,
-      });
+    if (result.kind === "unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     return NextResponse.json({
@@ -125,6 +113,7 @@ export async function POST(req: Request) {
       reference: result.reference,
     });
   } catch (e: any) {
+    console.error("Paystack init error:", e);
     return NextResponse.json(
       { error: e?.message || "Failed to initialize Paystack" },
       { status: 500 },

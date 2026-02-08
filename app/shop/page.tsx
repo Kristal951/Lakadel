@@ -18,11 +18,12 @@ export default function Shop() {
 
   useEffect(() => {
     fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    setShowModal(true);
+    if (!user) {
+      setShowModal(true);
+    }
   }, []);
 
   const productsToShow = filteredAndSearchedProducts();
@@ -62,7 +63,7 @@ export default function Shop() {
         ))}
       </div>
 
-      {showModal && !user && <SelectCountryModal />}
+      {showModal && <SelectCountryModal />}
     </div>
   );
 }

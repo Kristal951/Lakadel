@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import useCartStore from "@/store/cartStore";
@@ -18,19 +18,96 @@ import PhoneInput, {
 import "react-phone-number-input/style.css";
 import { countries } from "@/lib";
 import { CartItem, Product, ShippingAddress } from "@/store/types";
-import { Images } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 
-// ... [Keep NIGERIA_STATES, Product, CartItem, CartLine, formatMoney, isValidEmail as they were] ...
-
 type PaymentMethod = "PAYSTACK" | "STRIPE";
+type CartLine = CartItem & { product: Product };
+
+const NIGERIA_STATES = [
+  "Abia",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "FCT - Abuja",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+] as const;
+
+function isValidEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function formatMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: currency === "NGN" ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${amount.toLocaleString()} ${currency}`;
+  }
+}
+
+function getOrCreateGuestId() {
+  if (typeof window === "undefined") return null;
+  const key = "guestId";
+  let id = localStorage.getItem(key);
+  if (id) return id;
+
+  id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `guest_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+  localStorage.setItem(key, id);
+  return id;
+}
 
 export default function GuestCheckoutPage() {
   const router = useRouter();
   const { items } = useCartStore();
   const { products } = useProductStore();
-  const { currency } = useUserStore();
-  const {showToast} = useToast()
+  const { currency, user } = useUserStore();
+  const { showToast } = useToast();
+
+  const payLock = useRef(false);
+
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGuestId(getOrCreateGuestId());
+  }, []);
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -51,7 +128,9 @@ export default function GuestCheckoutPage() {
     () => cartItems.reduce((sum, i) => sum + i.quantity * i.product.price, 0),
     [cartItems],
   );
+
   const shippingFee = useMemo(() => (subtotal > 50_000 ? 0 : 2500), [subtotal]);
+
   const totalAmount = useMemo(
     () => subtotal + shippingFee,
     [subtotal, shippingFee],
@@ -64,14 +143,10 @@ export default function GuestCheckoutPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState<string | undefined>(undefined);
   const [phoneTouched, setPhoneTouched] = useState(false);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() =>
     currency === "NGN" ? "PAYSTACK" : "STRIPE",
   );
-
-  const phoneOk = useMemo(() => {
-    if (!phone) return false;
-    return isValidPhoneNumber(phone);
-  }, [phone]);
 
   useEffect(() => {
     setPaymentMethod(currency === "NGN" ? "PAYSTACK" : "STRIPE");
@@ -89,72 +164,17 @@ export default function GuestCheckoutPage() {
     country: "Nigeria",
     postalCode: "",
   });
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
 
-  const NIGERIA_STATES = [
-    "Abia",
-    "Adamawa",
-    "Akwa Ibom",
-    "Anambra",
-    "Bauchi",
-    "Bayelsa",
-    "Benue",
-    "Borno",
-    "Cross River",
-    "Delta",
-    "Ebonyi",
-    "Edo",
-    "Ekiti",
-    "Enugu",
-    "FCT - Abuja",
-    "Gombe",
-    "Imo",
-    "Jigawa",
-    "Kaduna",
-    "Kano",
-    "Katsina",
-    "Kebbi",
-    "Kogi",
-    "Kwara",
-    "Lagos",
-    "Nasarawa",
-    "Niger",
-    "Ogun",
-    "Ondo",
-    "Osun",
-    "Oyo",
-    "Plateau",
-    "Rivers",
-    "Sokoto",
-    "Taraba",
-    "Yobe",
-    "Zamfara",
-  ] as const;
-
-  type CartLine = CartItem & { product: Product };
-
-  function formatMoney(amount: number, currency: string) {
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: currency === "NGN" ? 0 : 2,
-      }).format(amount);
-    } catch {
-      return `${amount.toLocaleString()} ${currency}`;
-    }
-  }
-
-  function isValidEmail(v: string) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
-  }
+  const phoneOk = useMemo(() => !!phone && isValidPhoneNumber(phone), [phone]);
 
   const isFormValid = useMemo(() => {
     return (
-      shipping.fullName.trim() &&
-      shipping.streetAddress.trim() &&
-      shipping.city.trim() &&
+      shipping.fullName.trim().length > 0 &&
+      shipping.streetAddress.trim().length > 0 &&
+      shipping.city.trim().length > 0 &&
       isValidEmail(email) &&
       phoneOk
     );
@@ -162,14 +182,23 @@ export default function GuestCheckoutPage() {
 
   const handlePay = async () => {
     setError("");
+
+    if (!guestId && !user?.id) {
+      setError("Guest session not ready. Please refresh and try again.");
+      return;
+    }
+
     if (!isFormValid) {
       setError("Please fill in all required fields correctly.");
       return;
     }
 
+    if (payLock.current) return;
+    payLock.current = true;
     setLoading(true);
 
     try {
+      // 1) Create order draft (server must compute totals from DB)
       const orderRes = await fetch("/api/users/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,17 +207,14 @@ export default function GuestCheckoutPage() {
           phone: phone ? formatPhoneNumberIntl(phone) : null,
           currency,
           shippingAddress: shipping,
+          guestId: guestId, // ✅ include explicitly
+          userId: user?.id ?? null,
           items: cartItems.map((i) => ({
             productId: i.product.id,
             quantity: i.quantity,
             selectedSize: i.selectedSize ?? null,
             selectedColor: i.selectedColor ?? null,
-            unitPrice: i.product.price,
-            lineTotal: i.product.price * i.quantity,
           })),
-          subtotal,
-          shippingFee,
-          total: totalAmount,
         }),
       });
 
@@ -219,40 +245,36 @@ export default function GuestCheckoutPage() {
         window.location.href = authorization_url;
         return;
       }
-      const stripeItems = cartItems.map((i) => ({
-        productId: i.product.id, 
-        quantity: i.quantity,
-        name: i.product.name, 
-        image: i.product.images?.[0] || null,
-      }));
 
       const initRes = await fetch("/api/users/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: stripeItems,
-          currency,
+          orderId,
+          guestId: localStorage.getItem("guestId"),
+          userId: user?.id ?? null,
           email: email.trim().toLowerCase(),
-          guestId: localStorage.getItem("guestId"), 
         }),
       });
+
       const initData = await initRes.json();
       if (!initRes.ok)
         throw new Error(initData?.error || "Failed to initialize Stripe");
 
-      const authorization_url = initData?.url as string | undefined;
-      if (!authorization_url)
-        throw new Error("Stripe did not return an authorization URL");
+      const url = initData?.url as string | undefined;
+      if (!url) throw new Error("Stripe did not return a checkout URL");
 
-      window.location.href = authorization_url;
-      return;
+      window.location.href = url;
     } catch (e: any) {
-      setError(e?.message ?? "Something went wrong.");
-      showToast('Error Creating Order', 'error')
+      const msg = e?.message ?? "Something went wrong.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
+      payLock.current = false;
     }
   };
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-foreground selection:text-background">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-12 min-h-screen">
@@ -282,7 +304,6 @@ export default function GuestCheckoutPage() {
             )}
 
             <div className="space-y-16">
-              {/* SECTION 01 */}
               <section>
                 <div className="flex items-center gap-4 mb-8">
                   <span className="text-xs font-bold w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center">
@@ -487,12 +508,6 @@ export default function GuestCheckoutPage() {
                         <p className="text-sm text-foreground/60 mt-1">
                           Best for NGN • Local cards • Bank transfer/USSD
                         </p>
-
-                        {/* <ul className="mt-3 text-xs text-foreground/60 space-y-1">
-                          <li>✅ Very smooth for Nigerian customers</li>
-                          <li>✅ Often fewer failed local payments</li>
-                          <li>⚠️ Limited multi-currency support</li>
-                        </ul> */}
                       </div>
                     </div>
 
@@ -503,7 +518,6 @@ export default function GuestCheckoutPage() {
                     )}
                   </button>
 
-                  {/* STRIPE ROW */}
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("STRIPE")}
@@ -540,16 +554,6 @@ export default function GuestCheckoutPage() {
                           Best for USD/EUR/GBP • Global cards • True
                           multi-currency
                         </p>
-
-                        {/* <ul className="mt-3 text-xs text-foreground/60 space-y-1">
-                          <li>✅ Strong international card acceptance</li>
-                          <li>
-                            ✅ Great multi-currency + receipts/disputes tools
-                          </li>
-                          <li>
-                            ⚠️ For NGN-only customers, Paystack may feel simpler
-                          </li>
-                        </ul> */}
                       </div>
                     </div>
 
@@ -561,23 +565,30 @@ export default function GuestCheckoutPage() {
                   </button>
                 </div>
               </section>
-
-              <button
-                onClick={handlePay}
-                disabled={loading || !isFormValid}
-                className="w-full py-4 bg-foreground text-background rounded-lg font-semibold text-sm hover:bg-foreground/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-background/20 border-t-background rounded-full animate-spin mx-auto" />
-                ) : (
-                  `Complete Purchase — ${formatMoney(totalAmount, currency)}`
-                )}
-              </button>
             </div>
+          </div>
+
+          <div className="flex w-full h-max gap-2 flex-col items-start justify-center pt-4">
+              {error && (
+            <div className="mb-8 p-4 bg-red-50/50 border border-red-100 text-red-600 text-sm flex items-center gap-3 rounded-lg">
+              <IoInformationCircleOutline className="text-lg" /> {error}
+            </div>
+          )}
+
+            <button
+              onClick={handlePay}
+              disabled={loading || !isFormValid}
+              className="w-full py-4 bg-foreground text-background rounded-lg font-semibold text-sm hover:bg-foreground/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-background/20 border-t-background rounded-full animate-spin mx-auto" />
+              ) : (
+                `Complete Purchase — ${formatMoney(totalAmount, currency)}`
+              )}
+            </button>
           </div>
         </div>
 
-        {/* RIGHT SIDE: SUMMARY (5 Columns) */}
         <div className="lg:col-span-5 bg-foreground/2 border-l border-foreground/3 px-6 py-12 lg:px-16 lg:py-20">
           <div className="sticky top-16 max-w-sm mx-auto lg:mx-0">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground/50 mb-8">

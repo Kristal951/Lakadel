@@ -48,12 +48,8 @@ export function StatCard({ title, value, icon: Icon, trend, trendColor = 'foregr
    <div
   className={clsx(
     "group relative flex-1 overflow-hidden transition-all duration-300",
-
-    // 👉 Divider line (only right side)
     "border-r border-foreground/10 last:border-r-0",
-
-    // Subtle hover surface
-    "hover:bg-foreground/[0.02]"
+    "hover:bg-foreground/2"
   )}
 >
   <div className="relative h-full p-8">
@@ -61,13 +57,13 @@ export function StatCard({ title, value, icon: Icon, trend, trendColor = 'foregr
       <div className="space-y-5">
         
         {/* Icon */}
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.03] shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/3 shadow-sm">
           <Icon className="h-5 w-5 text-foreground/70" />
         </div>
 
         {/* Text */}
         <div className="space-y-1">
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-foreground/40">
+          <p className="text-xs font-bold uppercase tracking-widest text-foreground/40">
             {title}
           </p>
           <h3 className="text-4xl font-semibold tracking-tighter text-foreground">
@@ -78,7 +74,7 @@ export function StatCard({ title, value, icon: Icon, trend, trendColor = 'foregr
 
       {/* Trend pill */}
       {trend && (
-        <div className={`flex items-center gap-1 rounded-full border border-${trendColor} bg-foreground/[0.03] px-2.5 py-1 text-[10px] font-black text-foreground/60 transition-colors group-hover:border-foreground/20`}>
+        <div className={`flex items-center gap-1 rounded-full border border-${trendColor} bg-foreground/3 px-2.5 py-1 text-[10px] font-black text-foreground/60 transition-colors group-hover:border-foreground/20`}>
           <span className={`text-${trendColor}`}>{trend}</span>
           <svg
             className={`h-2.5 w-2.5 opacity-60 text-${trendColor}`}
