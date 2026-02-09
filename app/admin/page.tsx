@@ -2,15 +2,14 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import {
-  ShoppingBag,
-  Users,
-  CreditCard,
+ 
   ArrowUpRight,
   MoreHorizontal,
   Clock,
 } from "lucide-react";
 import clsx from "clsx";
 import { StatCard, StatusBadge } from "@/components/admin/DashboardWidgets";
+import { StatCardTwo } from "@/components/admin/StatCardTwo";
 
 export default async function AdminDashboardPage() {
   const now = new Date();
@@ -78,30 +77,38 @@ export default async function AdminDashboardPage() {
       </header>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-0">
-        <StatCard
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCardTwo
           title="Revenue Today"
           value={`₦${revenueToday.toLocaleString()}`}
-          icon={CreditCard}
+          iconKey="card"
           trend="Today"
+          iconBg="bg-emerald-100"
+          iconColor="text-emerald-700"
         />
-        <StatCard
+        <StatCardTwo
           title="Orders Today"
           value={ordersToday.toString()}
-          icon={ShoppingBag}
+          iconKey="shopBag"
           trend="Today"
+          iconBg="bg-purple-100"
+          iconColor="text-purple-700"
         />
-        <StatCard
+        <StatCardTwo
           title="Pending Orders"
           value={pendingOrders.toString()}
-          icon={Clock}
+          iconKey="pending"
           trend="Needs attention"
+          iconBg="bg-amber-100"
+          iconColor="text-amber-700"
         />
-        <StatCard
+        <StatCardTwo
           title="Customers"
           value={customersCount.toString()}
-          icon={Users}
+          iconKey="customers"
           trend="Total"
+          iconBg="bg-blue-100"
+          iconColor="text-blue-700"
         />
       </div>
 
@@ -158,7 +165,7 @@ export default async function AdminDashboardPage() {
                   >
                     <td className="px-6 py-4">
                       <span className="font-mono w-[40%] text-xs font-semibold truncate text-foreground bg-background border border-foreground/20 px-2 py-1 rounded-md uppercase">
-                        #{o.id.slice(0,5)}
+                        #{o.id.slice(0, 5)}
                       </span>
                     </td>
 

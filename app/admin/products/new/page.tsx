@@ -2,17 +2,59 @@
 import { useToast } from "@/hooks/useToast";
 import { categories, genders, sizes, uploadImagesToCloudinary } from "@/lib";
 import { Check, Image as ImageIcon, Plus, X, Trash2 } from "lucide-react";
-import React, { useState, KeyboardEvent, useEffect, FormEvent } from "react";
+import React, {
+  useState,
+  KeyboardEvent,
+  useEffect,
+  FormEvent,
+  useRef,
+} from "react";
 import Image from "next/image"; // Optimization
 import Spinner from "@/components/ui/spinner";
+import { HexColorPicker } from "react-colorful";
 
 export default function AddNewProductPage() {
   const { showToast } = useToast();
 
   // --- State Management ---
   const [colors, setColors] = useState<{ name: string; hex: string }[]>([]);
-  const [currentHex, setCurrentHex] = useState("#000000");
-  const [currentName, setCurrentName] = useState("");
+  const [hex, setHex] = useState("#6366f1");
+  const [currentColorName, setCurrentColorName] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const addColor = () => {
+    const name = currentColorName.trim();
+    if (!name) return;
+
+    // ✅ prevent duplicates by name (case-insensitive)
+    const exists = colors.some(
+      (c) => c.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (exists) {
+      showToast("That color name already exists", "info");
+      return;
+    }
+
+    setColors((prev) => [...prev, { hex, name }]);
+    setCurrentColorName("");
+    setShowPicker(false);
+  };
+
+  const removeColor = (index: number) => {
+    setColors((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Images
   const [files, setFiles] = useState<File[]>([]);
@@ -46,12 +88,6 @@ export default function AddNewProductPage() {
       prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
     );
   }
-
-  const addColor = () => {
-    if (!currentName.trim()) return;
-    setColors([...colors, { name: currentName.trim(), hex: currentHex }]);
-    setCurrentName("");
-  };
 
   const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && tagInput.trim()) {
@@ -123,89 +159,68 @@ export default function AddNewProductPage() {
     setSku("");
     setStatus("ACTIVE");
     setColors([]);
-    setCurrentHex("#000000");
-    setCurrentName("");
+    setColors([]);
+    setHex("#6366f1");
+    setCurrentColorName("");
   };
 
-  // async function handleSubmit() {
-  //   // files from <input type="file" multiple />
-  //   const imageUrls = await uploadImagesToCloudinary(files);
-
-  //   const payload = {
-  //     productName,
-  //     productDesc,
-  //     price: Number(productPrice),
-  //     stock: Number(stock),
-  //     category,
-  //     genders,
-  //     sku,
-  //     status,
-  //     tags,
-  //     sizes,
-  //     colors,
-  //     images: imageUrls,
-  //   };
-
-  //   const res = await fetch("/api/admin/products/new", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-
-  //   const data = await res.json();
-  //   if (!res.ok) throw new Error(data?.message || "Failed to create product");
-
-  //   return data;
-  // }
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!productName.trim()) return showToast("Product name is required", "error");
-  if (!productPrice) return showToast("Price is required", "error");
-  if (!availableGender) return showToast("Please select a gender", "error");
-  if (!category) return showToast("Please select a category", "error");
-  if (!sku.trim()) return showToast("SKU is required", "error");
-  if (files.length === 0) return showToast("Please upload at least 1 image", "error");
+    if (!productName.trim())
+      return showToast("Product name is required", "error");
+    if (!productPrice) return showToast("Price is required", "error");
+    if (!availableGender) return showToast("Please select a gender", "error");
+    if (!category) return showToast("Please select a category", "error");
+    if (!sku.trim()) return showToast("SKU is required", "error");
+    if (files.length === 0)
+      return showToast("Please upload at least 1 image", "error");
+    if (availableSizes.length === 0)
+      return showToast("Select at least one size", "error");
 
-  setLoading(true);
-  try {
-    const imageUrls = await uploadImagesToCloudinary(files);
+    setLoading(true);
+    try {
+      const imageUrls = await uploadImagesToCloudinary(files);
 
-    const payload = {
-      name: productName,
-      description: productDesc,
-      price: Number(productPrice),
-      stock: Number(stock || 0),
-      category,
-      gender: availableGender,
-      sku,
-      status,
-      tags,
-      sizes: availableSizes,
-      colors,
-      images: imageUrls,
-    };
+      const payload = {
+        name: productName,
+        description: productDesc,
+        price: Number(productPrice),
+        stock: Number(stock || 0),
+        category,
+        gender: availableGender,
+        sku,
+        status,
+        tags,
+        sizes: availableSizes,
+        colors,
+        images: imageUrls,
+      };
 
-    const res = await fetch("/api/admin/products/new", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch("/api/admin/products/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || data?.error || "Failed to create product");
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(
+          data?.message || data?.error || "Failed to create product",
+        );
 
-    showToast("Product created successfully!", "success");
-    resetForm();
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Something went wrong";
-    showToast('Something went wrong', "error");
-    console.log(message)
-  } finally {
-    setLoading(false);
-  }
-};
+      showToast("Product created successfully!", "success");
+      resetForm();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      showToast(message, "error");
+      console.log(message);
+    } finally {
+      1;
+      setLoading(false);
+    }
+  };
 
   return (
     <form
@@ -264,10 +279,12 @@ export default function AddNewProductPage() {
                     key={i}
                     className="relative w-20 h-20 rounded-lg overflow-hidden border border-foreground/10 shrink-0 group"
                   >
-                    <img
+                    <Image
                       src={src}
                       alt="preview"
-                      className="w-full h-full object-cover"
+                      fill
+                      unoptimized
+                      className="object-cover"
                     />
                     <button
                       type="button"
@@ -502,66 +519,100 @@ export default function AddNewProductPage() {
           </section>
 
           <section className="space-y-6 border-t border-foreground/10 pt-8">
-            <h2 className="text-xl font-bold">Product Colors</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold tracking-tight">
+                Product Colors
+              </h2>
+              <span className="text-[10px] bg-foreground/5 px-2 py-1 rounded-md font-bold text-foreground/50 uppercase tracking-widest">
+                {colors.length} Variants
+              </span>
+            </div>
+
             <div className="flex flex-col gap-4">
-              <div className="flex items-end gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    Color
-                  </label>
-                  <input
-                    type="color"
-                    value={currentHex}
-                    onChange={(e) => setCurrentHex(e.target.value)}
-                    className="w-12 h-12 rounded-xl border border-foreground/20 cursor-pointer bg-background p-1"
+              {/* Unified Input Bar */}
+              <div className="relative flex items-center gap-2 p-2 bg-foreground/3 border border-foreground/10 rounded-2xl focus-within:border-foreground/30 transition-all">
+                {/* Custom Popover Trigger */}
+                <div className="relative" ref={pickerRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPicker(!showPicker)}
+                    className="w-12 h-12 rounded-xl border-2 border-background shadow-sm transition-transform active:scale-95"
+                    style={{ backgroundColor: hex }}
+                    title="Choose color"
                   />
+
+                  {showPicker && (
+                    <div className="absolute top-full left-0 mt-3 z-50 p-4 bg-white border border-foreground/10 shadow-2xl rounded-2xl animate-in fade-in zoom-in duration-150">
+                      <HexColorPicker color={hex} onChange={setHex} />
+                      <div className="mt-3 flex items-center justify-between font-mono text-xs font-bold text-foreground/40 uppercase">
+                        <span>{hex}</span>
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: hex }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+
+                <div className="flex-1">
+                  <label className="block text-[9px] font-black uppercase tracking-[0.15em] text-foreground/40 ml-1 mb-0.5">
                     Color Name
                   </label>
                   <input
                     type="text"
-                    value={currentName}
-                    onChange={(e) => setCurrentName(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && (e.preventDefault(), addColor())
-                    }
+                    value={currentColorName}
+                    onChange={(e) => setCurrentColorName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (currentColorName.trim()) addColor();
+                      }
+                    }}
                     placeholder="e.g. Midnight Black"
-                    className="p-2.5 h-12 w-full rounded-xl border border-foreground/50 outline-0 focus:ring-1 focus:ring-foreground transition-all"
+                    className="w-full bg-transparent outline-none text-sm font-semibold placeholder:text-foreground/20"
                   />
                 </div>
+
                 <button
                   type="button"
                   onClick={addColor}
-                  className="h-12 px-4 bg-foreground text-background rounded-xl font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                  disabled={!currentColorName.trim()}
+                  className="h-12 px-5 bg-foreground text-background rounded-xl font-bold hover:opacity-90 disabled:opacity-10 transition-all flex items-center gap-2"
                 >
-                  <Plus className="w-4 h-4" /> Add
+                  <Plus className="w-4 h-4" />
+                  <span>Add</span>
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 min-h-10">
                 {colors.map((color, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-foreground/20 bg-muted/5 animate-in fade-in zoom-in duration-200"
+                    className="group flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-xl border border-foreground/10 bg-background hover:border-foreground/20 transition-all animate-in slide-in-from-top-1"
                   >
                     <div
-                      className="w-4 h-4 rounded-full border border-foreground/10"
+                      className="w-4 h-4 rounded-lg shadow-inner"
                       style={{ backgroundColor: color.hex }}
                     />
-                    <span className="text-sm font-medium">{color.name}</span>
+                    <span className="text-xs font-bold text-foreground/80">
+                      {color.name}
+                    </span>
                     <button
                       type="button"
-                      onClick={() =>
-                        setColors(colors.filter((_, idx) => idx !== i))
-                      }
-                      className="hover:text-red-500 transition-colors"
+                      onClick={() => removeColor(i)}
+                      className="w-5 h-5 flex items-center justify-center rounded-md hover:bg-rose-500 hover:text-white text-foreground/30 transition-all"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
+
+                {colors.length === 0 && (
+                  <p className="text-xs text-foreground/30 italic py-2">
+                    No colors defined for this product.
+                  </p>
+                )}
               </div>
             </div>
           </section>

@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChartLine,
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
@@ -23,6 +24,7 @@ const navItems = [
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Customers", href: "/admin/customers", icon: Users },
+  { name: "Analytics", href: "/admin/analytics", icon: ChartLine },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
