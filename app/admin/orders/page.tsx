@@ -5,9 +5,10 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 
 import { StatCard, StatusBadge } from "@/components/admin/DashboardWidgets";
-import { Package, DollarSign, Clock, CheckCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { authOptions } from "@/lib/authOptions";
+import { StatCardTwo } from "@/components/admin/StatCardTwo";
 
 type SearchParams = {
   q?: string;
@@ -32,7 +33,9 @@ function normalizeQuery(q?: string) {
 function normalizeStatus(status?: string): OrderStatus | undefined {
   if (!status) return undefined;
   const s = status.toUpperCase();
-  return ALL_STATUSES.includes(s as OrderStatus) ? (s as OrderStatus) : undefined;
+  return ALL_STATUSES.includes(s as OrderStatus)
+    ? (s as OrderStatus)
+    : undefined;
 }
 
 function formatMoney(amount: number, currency = "NGN") {
@@ -229,30 +232,34 @@ export default async function AdminOrdersPage({
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-0">
-        <StatCard
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCardTwo
           title="Total Revenue"
           value={formatMoney(Number(totalRevenue), "NGN")}
-          icon={DollarSign}
-          trend=""
+          iconKey="revenue"
+          iconColor="text-emerald-700"
+          iconBg="bg-emerald-100"
         />
-        <StatCard
+        <StatCardTwo
           title="Active Orders"
           value={String(activeCount)}
-          icon={Package}
-          trend=""
+          iconKey="active"
+          iconColor="text-indigo-700"
+          iconBg="bg-indigo-100"
         />
-        <StatCard
+        <StatCardTwo
           title="Pending"
           value={String(pendingCount)}
-          icon={Clock}
-          trend=""
+          iconKey="pending"
+          iconColor="text-amber-700"
+          iconBg="bg-amber-100"
         />
-        <StatCard
+        <StatCardTwo
           title="Paid"
           value={String(paidCount)}
-          icon={CheckCircle}
-          trend=""
+          iconKey="paid"
+          iconColor="text-green-700"
+          iconBg="bg-green-100"
         />
       </div>
 
@@ -292,7 +299,10 @@ export default async function AdminOrdersPage({
           <tbody className="divide-y divide-foreground/5">
             {orders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-8 py-10 text-sm flex items-center justify-center w-full text-foreground">
+                <td
+                  colSpan={6}
+                  className="px-8 py-10 text-sm flex items-center justify-center w-full text-foreground"
+                >
                   No orders found.
                 </td>
               </tr>
@@ -303,13 +313,13 @@ export default async function AdminOrdersPage({
                   className="group hover:bg-foreground/1 transition-colors"
                 >
                   <td className="px-8 py-6">
-                    <div className="flex w-50 flex-col">
+                    <div className="flex flex-col">
                       <span className="text-sm font-semibold text-foreground">
                         #{o.id.slice(0, 8).toUpperCase()}
                       </span>
-                      <span className="text-xs text-foreground/40 font-mono truncate">
+                      {/* <span className="text-xs text-foreground/40 font-mono">
                         {o.paymentRef ?? "—"}
-                      </span>
+                      </span> */}
                     </div>
                   </td>
 
