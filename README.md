@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lakadel 🛍️
 
-## Getting Started
+Modern full-stack fashion e-commerce platform built to deliver a seamless online shopping experience with secure payments, admin analytics, and scalable architecture.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Tech Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
+![NextAuth](https://img.shields.io/badge/Auth-NextAuth-000000?style=flat-square)
+![Stripe](https://img.shields.io/badge/Stripe-635BFF?style=flat-square&logo=stripe&logoColor=white)
+![Paystack](https://img.shields.io/badge/Paystack-0BA4DB?style=flat-square&logo=paystack&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-443E38?style=flat-square)
+![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=flat-square&logo=vercel)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ✨ Features
 
-## Learn More
+### 🛒 Storefront
+- Product listing & filtering
+- Product detail pages
+- Image galleries
+- Size & color selection
 
-To learn more about Next.js, take a look at the following resources:
+### 🧺 Cart System
+- Persistent cart (guest + user)
+- Cart merge on login
+- Quantity updates
+- Real-time totals
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 💳 Payments
+- Stripe checkout
+- Paystack integration
+- Secure payment sessions
+- Webhook verification
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 📦 Orders
+- Order creation
+- Payment status tracking
+- Receipt support (PDF ready)
+- Order history
 
-## Deploy on Vercel
+### 🔐 Authentication
+- Google OAuth
+- Email/password login
+- NextAuth session handling
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### ☁️ Media Uploads
+- Multi-image product uploads
+- Cloudinary storage
+- Optimized delivery
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 🧑‍💻 Admin Dashboard
+- Revenue analytics
+- Order monitoring
+- Product management
+- Status badges
+
+---
+
+## 📸 Screenshots
+
+> Add your screenshots in `/public/screenshots`
+
+```md
+![Home](./public/screenshots/home.png)
+![Product](./public/screenshots/product.png)
+![Cart](./public/screenshots/cart.png)
+![Admin](./public/screenshots/admin.png)
