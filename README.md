@@ -111,31 +111,6 @@ Lakadel follows a full-stack monorepo architecture:
 
 ---
 
-## ⚙️ Setup Environment Variables
-
-Create a `.env` file in the root directory and add the following:
-
-```env
-DATABASE_URL= **************
-GOOGLE_CLIENT_ID= **************
-GOOGLE_CLIENT_SECRET= **************
-NEXTAUTH_SECRET= **************
-NEXTAUTH_URL= **************
-STRIPE_SECRET_KEY= **************
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= **************
-STRIPE_WEBHOOK_SECRET= **************   
-PAYSTACK_SECRET_KEY= **************
-NEXT_PUBLIC_APP_URL= **************
-NEXT_PUBLIC_EMAILJS_SERVICE_ID= **************
-NEXT_PUBLIC_EMAILJS_TEMPLATE_ID= **************
-NEXT_PUBLIC_EMAILJS_PUBLIC_KEY= **************
-CLOUDINARY_CLOUD_NAME= **************
-CLOUDINARY_API_KEY= **************
-CLOUDINARY_API_SECRET= **************
-```
-
----
-
 ## 📸 Screenshots
 
 > Add your screenshots in `/public/screenshots`
@@ -148,11 +123,104 @@ CLOUDINARY_API_SECRET= **************
 
 ```
 
-## ⚡ Getting Started
+## 🛠️ Getting Started
+To get a local copy up and running, please follow these simple steps.
+
+📦 Prerequisites
+Make sure you have the following installed:
+
+- Node.js (v18+ recommended)
+- npm / pnpm / yarn
+- PostgreSQL database
+- Git
+  
+Check versions: 
 ```bash
-1. git clone https://github.com/yourusername/lakadel.git
-2. cd lakadel
-3. npm install
-4. npm run dev
+node -v
+npm -v
+```
 
+## Setup
 
+1. 🚀 Clone Repository
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/lakadel.git
+   cd lakadel
+   ```
+2. 📥 Install Dependencies
+   Using npm:
+   ```bash
+   npm install
+   ```
+   Using pnpm
+   ```bash
+   pnpm install
+   ```
+
+   Using Yarn:
+   ```bash
+   yarn install
+   ```
+3. ⚙️ Environment Variables
+   Create a .env file in the root directory:
+   ```bash
+   touch .env
+   ```
+   Add the following variables:
+   ```env
+   # DATABASE
+    DATABASE_URL= **************
+
+   #Google
+    GOOGLE_CLIENT_ID= **************
+    GOOGLE_CLIENT_SECRET= **************
+
+   #NextAuth
+    NEXTAUTH_SECRET= **************
+    NEXTAUTH_URL= **************
+
+   #Stripe
+    STRIPE_SECRET_KEY= **************
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= **************
+    STRIPE_WEBHOOK_SECRET= **************
+
+   #Paystack
+    PAYSTACK_SECRET_KEY= **************
+
+   #Next
+    NEXT_PUBLIC_APP_URL= **************
+
+   #EmailJS
+    NEXT_PUBLIC_EMAILJS_SERVICE_ID= **************
+    NEXT_PUBLIC_EMAILJS_TEMPLATE_ID= **************
+    NEXT_PUBLIC_EMAILJS_PUBLIC_KEY= **************
+
+   #Cloudinary
+    CLOUDINARY_CLOUD_NAME= **************
+    CLOUDINARY_API_KEY= **************
+    CLOUDINARY_API_SECRET= **************
+   ```
+4. 🗄️Database Setup (Prisma)
+   Generate Prisma client :
+   ```bash
+   npx prisma generate
+   ```
+   Run migrations :
+   ```bash
+   npx prisma migrate dev
+   ```
+   Seed database (if seed file exists):
+   ```bash
+   npx prisma db seed
+   ```
+5. ☁️ Cloudinary Setup
+   1. Create an account at cloudinary
+   2. Copy:
+      - Cloud name
+      - Api key
+      - Api secret
+  3. Add them to .env
+  Lakadel uses cloudinary for:
+      - product images
+
+   
