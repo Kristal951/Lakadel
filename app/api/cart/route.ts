@@ -1,16 +1,9 @@
-// /app/api/cart/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import type { CartItemPayload } from "@/store/types";
 
-/**
- * IMPORTANT:
- * Using NULL in a composite UNIQUE key can cause duplicates in PostgreSQL.
- * So we normalize empty/undefined values into a sentinel string.
- * Make sure your Prisma schema makes selectedColor/selectedSize NON-NULL with a default "__DEFAULT__".
- */
 const DEFAULT_VARIANT = "__DEFAULT__";
 const norm = (v?: string | null) => (v && v.trim() ? v.trim() : DEFAULT_VARIANT);
 

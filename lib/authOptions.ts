@@ -56,7 +56,6 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // Email + password
     CredentialsProvider({
       id: "credentials",
       name: "Credentials",
@@ -101,7 +100,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: user.email },
           data: {
             image: user.image ?? null,
-            name: user.name ?? null,  // Fixed: Added null default
+            name: user.name ?? null,  
             authProvider: "GOOGLE",
           },
         });

@@ -19,7 +19,6 @@ type ProductPageProps = {
 };
 
 export default function ProductPage({ params }: ProductPageProps) {
-  // 1. Unwrap the params immediately using React 'use'
   const { id } = use(params);
 
   const { fetchProducts, getProductById, loading, error } = useProductStore();
@@ -29,17 +28,19 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>("");
-  const [selectedColor, setSelectedColor] = useState<string | null>("");
+  const [selectedColor, setSelectedColor] = useState<
+    { name: string; hex: string } | undefined
+  >();
   const { currency } = useUserStore();
   const router = useRouter();
 
   const handleAddToCart = () => {
     if (!product) return;
     const item: CartItem = {
-      id: product.id,
+      productId: product.id,
       quantity: 1,
-      selectedSize,
-      selectedColor,
+      selectedSize: selectedSize ?? undefined,
+      selectedColor: selectedColor ?? undefined,
     };
     addToCart(item);
     showToast("Item added to cart!", "success");
@@ -63,7 +64,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   useEffect(() => {
     if (product) {
       setSelectedImage(product.images?.[0] || null);
-      setSelectedColor(product.colors?.[0]?.name || null);
+      setSelectedColor(product.colors?.[0] ?? null);
     }
   }, [product]);
 
@@ -155,25 +156,20 @@ export default function ProductPage({ params }: ProductPageProps) {
           </div>
         )}
 
-        {product.colors?.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="font-medium">Available Colors:</p>
-            <div className="flex gap-2">
-              {product.colors.map((color: any) => (
-                <button
-                  key={color.hex}
-                  style={{ backgroundColor: color.hex }}
-                  className={`w-8 h-8 rounded-full border-2 transition ${
-                    selectedColor === color.name
-                      ? "border-(--accent,#B10E0E)"
-                      : "border-transparent"
-                  }`}
-                  onClick={() => setSelectedColor(color.name)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {product.colors.map((color: { name: string; hex: string }) => (
+          <button
+            key={color.hex}
+            type="button"
+            title={color.name}
+            style={{ backgroundColor: color.hex }}
+            className={`w-8 h-8 rounded-full border-2 transition ${
+              selectedColor?.hex === color.hex
+                ? "border-(--accent,#B10E0E)"
+                : "border-transparent"
+            }`}
+            onClick={() => setSelectedColor(color)}
+          />
+        ))}
 
         <button
           onClick={handleAddToCart}

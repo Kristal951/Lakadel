@@ -31,7 +31,7 @@ export default function ShoppingBag() {
 
   const totalPrice = useMemo(() => {
     return cartItems.reduce((sum, item) => {
-      const price = parseFloat(item.product?.price) || 0;
+      const price = Number(item.product?.price ?? 0);
       const qty = Number(item.quantity) || 1;
       return sum + price * qty;
     }, 0);
@@ -118,11 +118,10 @@ export default function ShoppingBag() {
       <div className="grid lg:grid-cols-12 gap-25 items-start">
         <div className="lg:col-span-8 space-y-10">
           {cartItems.map((item) => {
-            console.log(item)
-            const p = item.product?.order;
-             const imgSrc = item.product?.images?.[0] || "/placeholder.png";
-  const name = item.product?.name ?? "Product";
-  const price = item.product?.price ?? 0;
+            console.log(item);
+            const imgSrc = item.product?.images?.[0] || "/placeholder.png";
+            const name = item.product?.name ?? "Product";
+            const price = item.product?.price ?? 0;
 
             return (
               <div

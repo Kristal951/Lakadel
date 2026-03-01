@@ -8,13 +8,14 @@ export interface Product {
   sizes: string[];
   filters: string[];
   createdAt: string;
+  totalStock: number;
 }
 export type Color = { name: string; hex: string };
 
 export type CartItem = {
   productId: string;
   quantity: number;
-  selectedColor?: { name: string; hex: string };
+  selectedColor?: { name: string; hex: string } | null;
   selectedSize?: string | null;
   product?: {
     id: string;

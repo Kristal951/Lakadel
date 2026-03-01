@@ -10,8 +10,6 @@ import PriceContainer from "./PriceContainer";
 import { Product } from "@/store/types";
 import { useState } from "react";
 import { cld } from "@/lib";
-import { cartPut } from "@/lib/cartApi";
-import { useSession } from "next-auth/react";
 import useCartStore from "@/store/cartStore";
 
 export default function ProductCard(props: Product & { index?: number }) {
