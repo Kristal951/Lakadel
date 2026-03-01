@@ -45,53 +45,11 @@ const useUserStore = create<UserState>((set) => ({
     });
   },
 
- registerUser: async (data: any) => {
-  try {
-    set({ loading: true, error: null });
-
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) throw new Error(result?.message || "Registration failed");
-
-    const login = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
-
-    if (login?.error) throw new Error(login.error);
-
-    const symbol =
-      Object.values(countryCurrencyMap).find(
-        (c) => c.code === result.user.currency,
-      )?.symbol || "$";
-
-    set({
-      user: result.user,
-      currency: result.user.currency,
-      currencySymbol: symbol,
-      isAuthenticated: true,
-      loading: false,
-    });
-
-    return result;
-  } catch (err: any) {
-    set({ error: err?.message || "Registration failed", loading: false });
-    return err;
-  }
-},
-
-  loginUser: async (data: any) => {
+  registerUser: async (data: any) => {
     try {
       set({ loading: true, error: null });
 
-      const res = await fetch("/api/users/auth/login", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -99,9 +57,15 @@ const useUserStore = create<UserState>((set) => ({
 
       const result = await res.json();
 
-      if (!res.ok) {
-        throw new Error(result.message || "Login failed");
-      }
+      if (!res.ok) throw new Error(result?.message || "Registration failed");
+
+      const login = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (login?.error) throw new Error(login.error);
 
       const symbol =
         Object.values(countryCurrencyMap).find(
@@ -116,16 +80,12 @@ const useUserStore = create<UserState>((set) => ({
         loading: false,
       });
 
-      return { success: true, ...result };
+      return result;
     } catch (err: any) {
-      const message = err?.message || "Login failed";
-
-      set({ error: message, loading: false });
-
-      return { success: false, message };
+      set({ error: err?.message || "Registration failed", loading: false });
+      return err;
     }
   },
-
   logout: () => {
     set({
       user: null,

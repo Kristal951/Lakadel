@@ -5,6 +5,8 @@ import "./globals.css";
 import Providers from "@/contexts/Providers";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 export const metadata: Metadata = {
   title: "Lakadel",
@@ -33,7 +35,7 @@ const playfair = Lora({
   weight: ["400", "500", "600", "700"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;

@@ -29,9 +29,10 @@ export type CartItem = {
 export interface CartStore {
   items: CartItem[];
   isSyncing: boolean;
+  loading: boolean;
 
   addToCart: (item: CartItem) => void;
-  syncCart: ()=> void
+  syncCart: () => void;
   clearLocalCart: () => void;
 
   removeFromCart: (
@@ -139,10 +140,6 @@ export interface UserState {
   logout: () => void;
   registerUser: (data: {
     name: string;
-    email: string;
-    password: string;
-  }) => User | null | Promise<any>;
-  loginUser: (data: {
     email: string;
     password: string;
   }) => User | null | Promise<any>;

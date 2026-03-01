@@ -89,12 +89,15 @@ model Product {
 
 model Cart {
   id        String     @id @default(uuid())
-  userId    String     @unique
+  userId    String?    @unique
+  guestId   String?    @unique
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  user      User       @relation(fields: [userId], references: [id])
+  user      User?      @relation(fields: [userId], references: [id])
   items     CartItem[]
-  claimedAt DateTime? 
+  claimedAt DateTime?
+
+  @@index([guestId])
 }
 
 model CartItem {

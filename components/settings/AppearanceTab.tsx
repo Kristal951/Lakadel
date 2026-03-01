@@ -112,7 +112,7 @@ export default function AppearanceTab({ user }: { user: User | null }) {
                   "relative h-32 w-full rounded-2xl border-2 transition-all duration-300 overflow-hidden",
                   t.colors,
                   theme === t.id
-                    ? "ring-4 ring-[color:var(--accent)]/10 border-[color:var(--accent)] shadow-lg"
+                    ? "ring-4 ring-(--accent)/10 border-(--accent) shadow-lg"
                     : "border-transparent group-hover:border-slate-300",
                 )}
               >
@@ -121,14 +121,14 @@ export default function AppearanceTab({ user }: { user: User | null }) {
                   <div className={clsx("h-2 w-1/2 rounded-full opacity-10", t.id === "light" ? "bg-slate-900" : "bg-white")} />
 
                   <div className="mt-4 grid grid-cols-3 gap-1">
-                    <div className="h-6 rounded-md bg-[color:var(--accent)]/40" />
-                    <div className="h-6 rounded-md bg-[color:var(--accent)]/40" />
+                    <div className="h-6 rounded-md bg-(--accent)/40" />
+                    <div className="h-6 rounded-md bg-(--accent)/40" />
                   </div>
                 </div>
 
                 {theme === t.id && (
-                  <div className="absolute inset-0 bg-[color:var(--accent)]/5 flex items-center justify-center">
-                    <div className="bg-white text-[color:var(--accent)] p-1.5 rounded-full shadow-md">
+                  <div className="absolute inset-0 bg-(--accent)/5 flex items-center justify-center">
+                    <div className="bg-white text-(--accent) p-1.5 rounded-full shadow-md">
                       <FiCheck size={14} />
                     </div>
                   </div>
@@ -139,14 +139,14 @@ export default function AppearanceTab({ user }: { user: User | null }) {
                 <span
                   className={clsx(
                     "text-sm font-bold transition-colors",
-                    theme === t.id ? "text-[color:var(--accent)]" : "text-slate-600",
+                    theme === t.id ? "text-(--accent)" : "text-slate-600",
                   )}
                 >
                   {t.name}
                 </span>
                 <t.icon
                   size={14}
-                  className={theme === t.id ? "text-[color:var(--accent)]" : "text-slate-400"}
+                  className={theme === t.id ? "text-(--accent)" : "text-slate-400"}
                 />
               </div>
             </button>
@@ -159,7 +159,7 @@ export default function AppearanceTab({ user }: { user: User | null }) {
         {/* Accent Picker */}
         <section className="bg-background rounded-4xl border border-foreground/30 shadow-sm p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-[color:var(--accent)]/10 rounded-xl text-[color:var(--accent)]">
+            <div className="p-2 bg-(--accent)/10 rounded-xl text-(--accent)">
               <FiLayout size={20} />
             </div>
             <h3 className="text-lg font-bold text-foreground">Accent Color</h3>
@@ -174,7 +174,7 @@ export default function AppearanceTab({ user }: { user: User | null }) {
                   "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95",
                   a.bg,
                   accent === a.id
-                    ? "ring-4 ring-offset-2 ring-[color:var(--accent)]/30 shadow-lg"
+                    ? "ring-4 ring-offset-2 ring-(--accent)/30 shadow-lg"
                     : "",
                 )}
                 type="button"
@@ -202,7 +202,7 @@ export default function AppearanceTab({ user }: { user: User | null }) {
             step={1}
             value={fontScale}
             onChange={(e) => setFontScale(Number(e.target.value) as FontScale)}
-            className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[color:var(--accent)]"
+            className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-(--accent)"
           />
 
           <div className="flex justify-between mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -236,7 +236,7 @@ export default function AppearanceTab({ user }: { user: User | null }) {
                     if (!selected) return;
                     setCurrency(selected.currency);
                   }}
-                  className="w-full appearance-none bg-foreground/5 border border-foreground/10 rounded-2xl px-5 py-4 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-[color:var(--accent)]/20 focus:border-[color:var(--accent)] transition-all cursor-pointer"
+                  className="w-full appearance-none bg-foreground/5 border border-foreground/10 rounded-2xl px-5 py-4 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-(--accent)/20 focus:border-(--accent) transition-all cursor-pointer"
                 >
                   {countries.map((c) => (
                     <option key={c.code} value={c.currency} className="text-slate-900">
@@ -250,7 +250,7 @@ export default function AppearanceTab({ user }: { user: User | null }) {
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-[color:var(--accent)]/10 rounded-2xl border border-[color:var(--accent)]/20">
+          <div className="mt-6 p-4 bg-(--accent)/10 rounded-2xl border border-(--accent)/20">
             <p className="text-[11px] text-foreground/80 leading-relaxed font-medium">
               <strong>Note:</strong> Display currency is for your convenience.
               All checkouts are processed in <strong>NGN</strong>.

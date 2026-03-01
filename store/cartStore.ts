@@ -29,6 +29,7 @@ const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isSyncing: false,
+      loading: false,
 
       clearLocalCart: () => {
         set({ items: [] });
@@ -68,6 +69,7 @@ const useCartStore = create<CartStore>()(
         }
       },
       addToCart: async (item) => {
+        set({ loading: true });
         if (!item.productId || (item.quantity ?? 1) <= 0) return;
 
         const prev = get().items;
@@ -100,6 +102,8 @@ const useCartStore = create<CartStore>()(
         } catch (error) {
           set({ items: prev });
           throw error;
+        } finally {
+          set({ loading: false });
         }
       },
 

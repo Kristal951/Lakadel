@@ -69,7 +69,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // 2) Network call OUTSIDE DB transaction
     const init = await paystackInitialize({
       email: order.customerEmail,
       amountKobo: order.totalKobo,

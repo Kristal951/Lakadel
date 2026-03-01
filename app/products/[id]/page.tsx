@@ -22,7 +22,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { id } = use(params);
 
   const { fetchProducts, getProductById, loading, error } = useProductStore();
-  const { addToCart } = useCartStore();
+  const { addToCart, loading: isLoading } = useCartStore();
   const { showToast } = useToast();
 
   const [product, setProduct] = useState<any>(null);
@@ -34,17 +34,24 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { currency } = useUserStore();
   const router = useRouter();
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!product) return;
-    const item: CartItem = {
-      productId: product.id,
-      quantity: 1,
-      selectedSize: selectedSize ?? undefined,
-      selectedColor: selectedColor ?? undefined,
-    };
-    addToCart(item);
-    showToast("Item added to cart!", "success");
-    router.push("/shopping-bag");
+
+    try {
+      await addToCart({
+        productId: product.id,
+        quantity: 1,
+        product: product,
+        selectedSize: selectedSize ?? undefined,
+        selectedColor: selectedColor ?? undefined,
+      });
+      showToast("Item added to bag", "success");
+      router.push("/shopping-bag");
+    } catch (error) {
+      showToast("Failed to add item to cart", "error");
+      console.error("Add to cart error:", error);
+    }
   };
 
   useEffect(() => {
@@ -173,12 +180,18 @@ export default function ProductPage({ params }: ProductPageProps) {
 
         <button
           onClick={handleAddToCart}
-          disabled={!selectedSize}
+          disabled={!selectedSize || isLoading}
           className="mt-6 py-3 flex items-center justify-center gap-2 rounded-full text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: "var(--accent,#B10E0E)" }}
         >
-          <IoBagOutline size={24} />
-          Add to Bag
+          {isLoading ? (
+            <Spinner w="5" h="5" />
+          ) : (
+            <>
+              <IoBagOutline size={24} />
+              <p> Add to Bag</p>
+            </>
+          )}
         </button>
       </div>
     </section>

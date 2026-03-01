@@ -1,19 +1,32 @@
-
-import { v4 as uuidv4 } from "uuid";
+import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 
 const KEY = "lakadel_guest_id";
 
-export function getGuestID(): string | null {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(new RegExp(`(^| )${KEY}=([^;]+)`));
-  return m ? decodeURIComponent(m[2]) : null;
+export async function getGuestId() {
+  const jar = await cookies();
+  return jar.get(KEY)?.value ?? null;
 }
 
-export function ensureGuestID(): string {
-  const existing = getGuestID();
-  if (existing) return existing;
+export async function ensureGuestId() {
+  const jar = await cookies();
+  let id = jar.get(KEY)?.value ?? null;
 
-  const id = uuidv4();
-  document.cookie = `${KEY}=${encodeURIComponent(id)}; Path=/; Max-Age=${60 * 60 * 24 * 90}; SameSite=Lax`;
+  if (!id) {
+    id = randomUUID();
+    jar.set(KEY, id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 90, 
+    });
+  }
+
   return id;
+}
+
+export async function clearGuestId() {
+  const jar = await cookies();
+  jar.set(KEY, "", { path: "/", maxAge: 0 });
 }

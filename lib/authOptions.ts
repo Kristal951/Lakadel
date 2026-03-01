@@ -5,7 +5,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import {prisma} from "@/lib/prisma";
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -14,46 +13,6 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-
-    CredentialsProvider({
-      id: "guest",
-      name: "Guest",
-      credentials: {},
-      async authorize() {
-        const guestID = uuidv4();
-
-        const guest = await prisma.user.create({
-          data: {
-            isGuest: true,
-            guestID,
-            authProvider: "EMAIL",
-            currency: "NGN",
-            role: "USER",
-          },
-          select: {
-            id: true,
-            guestID: true,
-            isGuest: true,
-            currency: true,
-            role: true,
-            image: true,
-            email: true,
-            name: true,
-          },
-        });
-
-        return {
-          id: guest.id,
-          guestID: guest.guestID,
-          isGuest: guest.isGuest,
-          currency: guest.currency,
-          role: guest.role,
-          image: guest.image,
-          email: guest.email,
-          name: guest.name,
-        } as any;
-      },
     }),
 
     CredentialsProvider({

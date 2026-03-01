@@ -3,42 +3,65 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import type { CartItemPayload } from "@/store/types";
+import { getGuestId, ensureGuestId } from "@/lib/guest";
+
+export const runtime = "nodejs"; // Prisma needs node runtime
 
 const DEFAULT_VARIANT = "__DEFAULT__";
 const norm = (v?: string | null) => (v && v.trim() ? v.trim() : DEFAULT_VARIANT);
 
+type CartOwner = { userId: string; guestId?: never } | { guestId: string; userId?: never };
+
+// Read session userId if present
 async function getUserId() {
   const session = await getServerSession(authOptions);
   return session?.user?.id ?? null;
 }
 
-async function fetchCartItems(userId: string) {
+// For GET: do NOT create guestId
+async function getCartOwnerForRead(): Promise<CartOwner | null> {
+  const userId = await getUserId();
+  if (userId) return { userId };
+
+  const guestId = await getGuestId(); // ✅ no ensure
+  if (!guestId) return null;
+
+  return { guestId };
+}
+
+// For POST/PUT/DELETE: create guestId ONLY if needed
+async function getCartOwnerForWrite(): Promise<CartOwner> {
+  const userId = await getUserId();
+  if (userId) return { userId };
+
+  const guestId = await ensureGuestId(); // ✅ creates only on write
+  return { guestId };
+}
+
+async function fetchCartItems(owner: CartOwner) {
   const cart = await prisma.cart.findUnique({
-    where: { userId },
+    where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
     include: {
       items: {
         orderBy: { id: "desc" },
-        include: {
-          product: true,
-        },
+        include: { product: true },
       },
     },
   });
 
   return cart?.items ?? [];
 }
+
 function isPrismaRecordNotFound(err: any) {
-  // Prisma throws P2025 when update/delete target doesn't exist
   return err?.code === "P2025";
 }
 
 export async function GET() {
   try {
-    const userId = await getUserId();
-    if (!userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const owner = await getCartOwnerForRead();
+    if (!owner) return NextResponse.json({ items: [] }); // ✅ guests with no cookie: empty cart
 
-    const items = await fetchCartItems(userId);
+    const items = await fetchCartItems(owner);
     return NextResponse.json({ items });
   } catch (error) {
     console.error("GET /api/cart error:", error);
@@ -48,9 +71,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserId();
-    if (!userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const owner = await getCartOwnerForWrite();
 
     const body: CartItemPayload & { action?: string } = await request.json();
     const action = body.action ?? "add";
@@ -74,11 +95,11 @@ export async function POST(request: NextRequest) {
     const selectedColor = norm(body.selectedColor);
     const selectedSize = norm(body.selectedSize);
 
-    // Ensure cart exists
+    // Ensure cart exists for user OR guest
     const cart = await prisma.cart.upsert({
-      where: { userId },
+      where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
       update: {},
-      create: { userId },
+      create: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
       select: { id: true },
     });
 
@@ -102,7 +123,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const items = await fetchCartItems(userId);
+    const items = await fetchCartItems(owner);
     return NextResponse.json({ success: true, items });
   } catch (error) {
     console.error("POST /api/cart error:", error);
@@ -112,9 +133,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const userId = await getUserId();
-    if (!userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const owner = await getCartOwnerForWrite();
 
     const body: CartItemPayload & { action: string } = await request.json();
     const { action, productId } = body;
@@ -136,7 +155,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const cart = await prisma.cart.findUnique({
-      where: { userId },
+      where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
       select: { id: true },
     });
     if (!cart) return NextResponse.json({ error: "Cart not found" }, { status: 404 });
@@ -164,7 +183,7 @@ export async function PUT(request: NextRequest) {
         throw err;
       }
 
-      const items = await fetchCartItems(userId);
+      const items = await fetchCartItems(owner);
       return NextResponse.json({ success: true, items });
     }
 
@@ -180,7 +199,7 @@ export async function PUT(request: NextRequest) {
         throw err;
       }
 
-      const items = await fetchCartItems(userId);
+      const items = await fetchCartItems(owner);
       return NextResponse.json({ success: true, items });
     }
 
@@ -193,7 +212,8 @@ export async function PUT(request: NextRequest) {
         });
 
         if (!item) {
-          return NextResponse.json({ error: "Item not found" }, { status: 404 });
+          // NOTE: inside transaction, throw to escape
+          throw Object.assign(new Error("Item not found"), { statusCode: 404 });
         }
 
         const newQty = item.quantity - qtyDelta;
@@ -208,13 +228,14 @@ export async function PUT(request: NextRequest) {
         }
       });
     } catch (err: any) {
-      // If transaction threw our response, return it
-      if (err instanceof NextResponse) return err;
+      if (err?.statusCode === 404) {
+        return NextResponse.json({ error: "Item not found" }, { status: 404 });
+      }
       console.error("PUT /api/cart decrease error:", err);
       return NextResponse.json({ error: "Failed to update cart" }, { status: 500 });
     }
 
-    const items = await fetchCartItems(userId);
+    const items = await fetchCartItems(owner);
     return NextResponse.json({ success: true, items });
   } catch (error: any) {
     console.error("PUT /api/cart error:", error);
@@ -224,11 +245,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getUserId();
-    if (!userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const owner = await getCartOwnerForWrite();
 
-    // ✅ Make DELETE robust: handle missing JSON body safely
+    // handle missing JSON body safely
     let body: { action?: string } = {};
     try {
       body = await request.json();
@@ -241,15 +260,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     const cart = await prisma.cart.findUnique({
-      where: { userId },
+      where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
       select: { id: true },
     });
 
     if (!cart) return NextResponse.json({ success: true, items: [] });
 
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
-    });
+    await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
     return NextResponse.json({ success: true, items: [] });
   } catch (error) {

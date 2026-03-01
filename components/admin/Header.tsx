@@ -24,17 +24,8 @@ export default function AdminHeader() {
     <header className="fixed top-0 z-40 left-72 right-0 border-b border-foreground/5 bg-background">
       <div className="flex h-16 items-center justify-end px-8">
         
-        {/* Page Title
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-            {title}
-          </h1>
-        </div> */}
-
-        {/* Actions Area */}
         <div className="flex items-center gap-2 md:gap-4">
           
-          {/* Modern Search Input (Better than just a button) */}
           <div className="relative hidden sm:block">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <input

@@ -39,7 +39,7 @@ const Header = () => {
       className="fixed top-0 left-0 right-0 h-18 flex items-center md:justify-between md:px-6 px-2 z-50 border-0 border-b border-gray-100"
       style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
-      <Link href="/shop" className="relative h-11 md:w-35 w-14 shrink-0">
+      <Link href="/shop" className="relative h-11 md:w-35 w-10 shrink-0">
         <Image
           src="/Lakadel2.png"
           alt="Lakadel logo"

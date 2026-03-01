@@ -11,9 +11,13 @@ export default async function AdminLayout({
 }) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
+  console.log(session)
 
   if (!session) redirect("/auth/login");
-  if (role !== "ADMIN") redirect("/shop");
+  if (role !== "ADMIN"){ 
+    console.log(role)
+    redirect("/shop")
+  }
 
   return (
     <div className="h-screen w-full flex flex-col">

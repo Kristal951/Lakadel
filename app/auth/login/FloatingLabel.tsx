@@ -43,6 +43,9 @@ export default function FloatingLabelLogin() {
         redirect: false,
         callbackUrl: "/shop",
       });
+      if (!result?.error) {
+        await fetch("/api/cart/claim", { method: "POST" });
+      }
 
       if (result?.error) {
         showToast("Invalid email or password", "error");
