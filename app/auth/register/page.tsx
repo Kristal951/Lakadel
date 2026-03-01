@@ -14,7 +14,7 @@ export default function Register() {
     email: "",
     password: "",
   });
-  const { registerUser, loading, error } = useUserStore();
+  const { registerUser, loading } = useUserStore();
   const { showToast } = useToast();
   const router = useRouter();
 

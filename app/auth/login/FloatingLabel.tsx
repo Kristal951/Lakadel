@@ -23,7 +23,7 @@ export default function FloatingLabelLogin() {
 
     if (err === "OAuthAccountNotLinked") {
       showToast(
-        "This email already exists with another sign-in method. Use your original login method, or we can link Google.",
+        "This email already exists with another sign-in method. Use your original login method.",
         "error",
       );
       return;

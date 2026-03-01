@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { UserState } from "./types";
 import { useExchangeRateStore } from "./exchangeRate";
+import { signIn } from "next-auth/react";
 
 const countryCurrencyMap: Record<string, { code: string; symbol: string }> = {
   NG: { code: "NGN", symbol: "₦" },
@@ -44,40 +45,47 @@ const useUserStore = create<UserState>((set) => ({
     });
   },
 
-  registerUser: async (data: any) => {
-    try {
-      set({ loading: true, error: null });
+ registerUser: async (data: any) => {
+  try {
+    set({ loading: true, error: null });
 
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-      const result = await res.json();
-      console.log(result)
+    const result = await res.json();
 
-      if (!res.ok) throw new Error(result.message || "Registration failed");
+    if (!res.ok) throw new Error(result?.message || "Registration failed");
 
-      const symbol =
-        Object.values(countryCurrencyMap).find(
-          (c) => c.code === result.user.currency,
-        )?.symbol || "$";
+    const login = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
 
-      set({
-        user: result.user,
-        currency: result.user.currency,
-        currencySymbol: symbol,
-        isAuthenticated: true,
-        loading: false,
-      });
+    if (login?.error) throw new Error(login.error);
 
-      return result;
-    } catch (err: any) {
-      set({ error: err.message, loading: false });
-      return err;
-    }
-  },
+    const symbol =
+      Object.values(countryCurrencyMap).find(
+        (c) => c.code === result.user.currency,
+      )?.symbol || "$";
+
+    set({
+      user: result.user,
+      currency: result.user.currency,
+      currencySymbol: symbol,
+      isAuthenticated: true,
+      loading: false,
+    });
+
+    return result;
+  } catch (err: any) {
+    set({ error: err?.message || "Registration failed", loading: false });
+    return err;
+  }
+},
 
   loginUser: async (data: any) => {
     try {
