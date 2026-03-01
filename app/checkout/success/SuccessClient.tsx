@@ -187,9 +187,9 @@ export default function SuccessClient() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg relative group">
+      <div className="w-full md:max-w-lg relative group">
         <div className="relative bg-background border border-foreground/50 rounded-[2.5rem] overflow-hidden">
-          <div className="relative p-8 pt-12 text-center flex flex-col items-center">
+          <div className="relative md:p-8 pt-12 text-center flex flex-col items-center">
             <div
               className={`mb-6 w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500 text-white ${theme.ring}`}
             >
@@ -227,8 +227,8 @@ export default function SuccessClient() {
             )}
           </div>
 
-          <div className="px-8 pb-10">
-            <div className="bg-muted/30 dark:bg-white/5 rounded-4xl p-6 space-y-4">
+          <div className="md:px-8 px-2 pb-10">
+            <div className="bg-muted/30 dark:bg-white/5 rounded-4xl md:p-6 px-2 pt-6 space-y-4">
               <Row label="Order Reference" value={order?.id} mono copy />
               <Row label="Transaction Date" value={formatDateTime(order?.paidAt)} />
               <div className="my-4 border-t border-dashed border-foreground/10 pt-4">
