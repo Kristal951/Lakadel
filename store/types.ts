@@ -9,12 +9,49 @@ export interface Product {
   filters: string[];
   createdAt: string;
 }
+export type Color = { name: string; hex: string };
 
-export interface CartItem {
-  id: string;
+export type CartItem = {
+  productId: string;
   quantity: number;
+  selectedColor?: { name: string; hex: string };
   selectedSize?: string | null;
-  selectedColor?: string | null;
+  product?: {
+    id: string;
+    name: string;
+    price: number;
+    images: string[];
+    totalStock: number;
+  };
+};
+
+export interface CartStore {
+  items: CartItem[];
+  isSyncing: boolean;
+
+  addToCart: (item: CartItem) => void;
+  syncCart: ()=> void
+  clearLocalCart: () => void;
+
+  removeFromCart: (
+    productId: string,
+    selectedSize?: string | null,
+    selectedColorHex?: string | null,
+  ) => void;
+
+  increaseQty: (
+    productId: string,
+    selectedSize?: string | null,
+    selectedColorHex?: string | null,
+  ) => void;
+
+  decreaseQty: (
+    productId: string,
+    selectedSize?: string | null,
+    selectedColorHex?: string | null,
+  ) => void;
+
+  clearCart: () => void;
 }
 
 export interface ShippingAddress {
@@ -27,26 +64,6 @@ export interface ShippingAddress {
   country: string;
   isDefault?: boolean;
   landMark?: string;
-};
-
-export interface CartState {
-  items: CartItem[];
-  loggingOut: boolean,
-  hydrated: boolean
-
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: string, color?: string, size?: string) => void;
-  updateQuantity: (
-    productId: string,
-    qty: number,
-    color?: string,
-    size?: string,
-  ) => void;
-
-  clearCart: () => void;
-
-  totalItems: () => number;
-  setLoggingOut: (l: boolean) => void
 }
 
 export interface ProductState {
@@ -138,3 +155,10 @@ export interface ExchangeRateState {
   resetRates: () => void;
   lastFetched: number;
 }
+
+export type CartItemPayload = {
+  productId: string;
+  quantity: number;
+  selectedColor: string | null;
+  selectedSize: string | null;
+};

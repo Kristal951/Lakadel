@@ -1,7 +1,6 @@
 "use client";
 
 import useUserStore from "@/store/userStore";
-import { useExchangeRateStore } from "@/store/exchangeRate";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect } from "react";
@@ -18,8 +17,17 @@ interface ProfileMenuProps {
 export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { logout, user, currency, currencySymbol } = useUserStore();
-  const { status } = useSession();
+
+  const { logout, currency, currencySymbol } = useUserStore();
+  const { data: session, status } = useSession();
+  const user = session?.user as
+    | (typeof session extends { user: infer U } ? U : any)
+    | undefined;
+
+  const isGuest = status === "authenticated" && !!user && user.isGuest === true;
+
+  const isAuthedUser =
+    status === "authenticated" && !!user && user.isGuest !== true;
 
   useEffect(() => {
     if (!open) return;
@@ -36,35 +44,40 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
 
   if (!open) return null;
 
-  const handleLogout = async () => {
-    setOpen(false);
-
-    const cartStore = useCartStore.getState();
-    cartStore.setLoggingOut(true);
-    await signOut({ redirect: false });
-
-    cartStore.clearCart();
-    useCartStore.persist.clearStorage();
-
-    logout();
-    router.push("/auth/login");
-  };
-
   const handleLoginRedirect = () => {
     setOpen(false);
     router.push("/auth/login");
   };
 
+  const handleLogout = async () => {
+    setOpen(false);
+    useCartStore.getState().clearLocalCart();
+    logout();
+    await signOut({ redirect: false });
+
+    router.push("/auth/login");
+  };
+
+  const guardLinkClick = (e: React.MouseEvent, href: string) => {
+    if (!isAuthedUser) {
+      e.preventDefault();
+      handleLoginRedirect();
+      return;
+    }
+    setOpen(false);
+    router.push(href);
+  };
+
   return (
     <div
       ref={menuRef}
-      className="absolute right-0 top-14 w-52 rounded-xl border border-foreground/20 bg-background shadow-lg py-2 z-50"
+      className="absolute right-0 top-8 w-52 rounded-xl border border-foreground/20 bg-background shadow-lg py-2 z-50"
     >
       <div className="px-4 py-2 border-b border-foreground/10 mb-1">
-        {user ? (
+        {isAuthedUser ? (
           <div className="flex flex-col">
             <p className="text-sm font-semibold text-foreground truncate">
-              {user.name}
+              {user?.name ?? "User"}
             </p>
             <p className="text-xs text-foreground/50 truncate">
               {currencySymbol} {currency}
@@ -72,9 +85,17 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
           </div>
         ) : (
           <div className="flex flex-col gap-1">
+            {/* ✅ UX: show Guest vs Account */}
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
-              Account
+              {isGuest ? "Guest" : "Account"}
             </p>
+
+            {isGuest && (
+              <p className="text-[10px] text-foreground/50 leading-snug">
+                You’re browsing as a guest. Sign in to save wishlist & settings.
+              </p>
+            )}
+
             <button
               onClick={handleLoginRedirect}
               className="w-full py-1.5 px-2 text-xs text-white bg-foreground rounded-md hover:bg-foreground/90 transition"
@@ -88,11 +109,11 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
       <ul className="flex flex-col">
         <li>
           <Link
-            href={user ? "/wishlist" : ""}
+            href="/wishlist"
             className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
-              !user ? "cursor-not-allowed opacity-50" : ""
+              !isAuthedUser ? "cursor-not-allowed opacity-50" : ""
             }`}
-            onClick={() => setOpen(false)}
+            onClick={(e) => guardLinkClick(e, "/wishlist")}
           >
             <Heart className="w-5 h-5 mr-2" />
             Wishlist
@@ -101,18 +122,18 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
 
         <li>
           <Link
-            href={user ? "/settings" : ""}
+            href="/settings"
             className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
-              !user ? "cursor-not-allowed opacity-50" : ""
+              !isAuthedUser ? "cursor-not-allowed opacity-50" : ""
             }`}
-            onClick={() => setOpen(false)}
+            onClick={(e) => guardLinkClick(e, "/settings")}
           >
             <FiSettings className="w-5 h-5 mr-2" />
             Settings
           </Link>
         </li>
 
-        {user && (
+        {isAuthedUser && (
           <li>
             <button
               onClick={handleLogout}

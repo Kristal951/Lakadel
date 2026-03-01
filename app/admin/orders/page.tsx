@@ -1,7 +1,7 @@
 // app/admin/orders/page.tsx
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
+import {prisma} from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 
 import { StatCard, StatusBadge } from "@/components/admin/DashboardWidgets";

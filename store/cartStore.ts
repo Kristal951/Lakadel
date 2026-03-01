@@ -1,103 +1,211 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { CartState } from "./types";
+import type { CartStore, CartItem, CartItemPayload } from "./types";
+import {
+  cartGet,
+  cartAdd,
+  cartUpdate,
+  cartClear,
+  fetchProduct,
+} from "@/lib/cartApi";
 
-const useCartStore = create<CartState>()(
+const sameColor = (
+  a?: CartItem["selectedColor"],
+  b?: CartItem["selectedColor"],
+) => (a?.hex ?? null) === (b?.hex ?? null);
+
+const sameSize = (a?: string | null, b?: string | null) =>
+  (a ?? null) === (b ?? null);
+
+const toPayload = (item: Partial<CartItem>): CartItemPayload => ({
+  productId: item.productId!,
+  quantity: item.quantity ?? 1,
+  selectedColor: item.selectedColor?.hex ?? null,
+  selectedSize: item.selectedSize ?? null,
+});
+
+const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      isSyncing: false,
 
-      // ✅ add these
-      loggingOut: false,
-      hydrated: false,
+      clearLocalCart: () => {
+        set({ items: [] });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("cart-storage");
+        }
+      },
 
-      addToCart: (newItem) => {
-        set((state) => {
-          const exists = state.items.find(
-            (i) =>
-              i.id === newItem.id &&
-              i.selectedColor === newItem.selectedColor &&
-              i.selectedSize === newItem.selectedSize
+      syncCart: async () => {
+        set({ isSyncing: true });
+        try {
+          const { items: backendItems } = await cartGet();
+
+          const fullItems: CartItem[] = await Promise.all(
+            backendItems.map(async (payload) => {
+              const res = await fetchProduct(payload.productId);
+              const product =
+                (res as any)?.product ?? (res as any)?.order ?? res;
+
+              return {
+                productId: payload.productId,
+                quantity: payload.quantity,
+                selectedColor: payload.selectedColor
+                  ? { hex: payload.selectedColor, name: "" }
+                  : undefined,
+                selectedSize: payload.selectedSize ?? null,
+                product,
+              };
+            }),
           );
 
-          if (exists) {
-            return {
-              items: state.items.map((i) =>
-                i.id === newItem.id &&
-                i.selectedColor === newItem.selectedColor &&
-                i.selectedSize === newItem.selectedSize
-                  ? { ...i, quantity: i.quantity + newItem.quantity }
-                  : i
-              ),
-            };
-          }
-
-          return { items: [...state.items, newItem] };
-        });
+          set({ items: fullItems });
+        } catch (e) {
+          console.error("Failed to sync cart:", e);
+        } finally {
+          set({ isSyncing: false });
+        }
       },
+      addToCart: async (item) => {
+        if (!item.productId || (item.quantity ?? 1) <= 0) return;
 
-      removeFromCart: (productId, color, size) => {
-        set((state) => ({
-          items: state.items.filter(
-            (i) =>
-              !(
-                i.id === productId &&
-                i.selectedColor === color &&
-                i.selectedSize === size
-              )
-          ),
-        }));
-      },
+        const prev = get().items;
 
-      updateQuantity: (productId, qty, color, size) => {
-        set((state) => {
-          if (qty < 1) {
-            return {
-              items: state.items.filter(
-                (i) =>
-                  !(
-                    i.id === productId &&
-                    i.selectedColor === color &&
-                    i.selectedSize === size
-                  )
-              ),
-            };
-          }
+        const existingIndex = prev.findIndex(
+          (i) =>
+            i.productId === item.productId &&
+            sameSize(i.selectedSize, item.selectedSize) &&
+            sameColor(i.selectedColor, item.selectedColor),
+        );
 
-          return {
-            items: state.items.map((i) =>
-              i.id === productId &&
-              i.selectedColor === color &&
-              i.selectedSize === size
-                ? { ...i, quantity: qty }
-                : i
-            ),
+        let next: CartItem[];
+        if (existingIndex !== -1) {
+          next = [...prev];
+          next[existingIndex] = {
+            ...next[existingIndex],
+            quantity: next[existingIndex].quantity + (item.quantity ?? 1),
           };
-        });
+        } else {
+          next = [
+            ...prev,
+            { ...item, quantity: item.quantity ?? 1 } as CartItem,
+          ];
+        }
+
+        set({ items: next });
+
+        try {
+          await cartAdd(toPayload(item));
+        } catch (error) {
+          set({ items: prev });
+          throw error;
+        }
       },
 
-      // ✅ clear also resets flags
-      clearCart: () => set({ items: [], hydrated: false }),
+      removeFromCart: async (productId, selectedSize, selectedColorHex) => {
+        const prev = get().items;
 
-      setItems: (items: any[]) => set({ items }),
+        const next = prev.filter(
+          (i) =>
+            !(
+              i.productId === productId &&
+              (i.selectedSize ?? null) === (selectedSize ?? null) &&
+              (i.selectedColor?.hex ?? null) === (selectedColorHex ?? null)
+            ),
+        );
 
-      // ✅ now it will actually exist
-      setLoggingOut: (v: boolean) => set({ loggingOut: v }),
+        set({ items: next });
 
-      // ✅ use after fetching server cart on login
-      setHydrated: (v: boolean) => set({ hydrated: v }),
+        try {
+          await cartUpdate({
+            productId,
+            selectedSize: selectedSize ?? null,
+            selectedColor: selectedColorHex ?? null,
+            quantity: 1,
+            action: "remove",
+          });
+        } catch (error) {
+          set({ items: prev });
+          throw error;
+        }
+      },
 
-      totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+      increaseQty: async (productId, selectedSize, selectedColorHex) => {
+        const prev = get().items;
+
+        const next = prev.map((i) => {
+          const match =
+            i.productId === productId &&
+            (i.selectedSize ?? null) === (selectedSize ?? null) &&
+            (i.selectedColor?.hex ?? null) === (selectedColorHex ?? null);
+
+          if (!match) return i;
+
+          const max = i.product?.totalStock ?? 99;
+          return { ...i, quantity: Math.min(i.quantity + 1, max) };
+        });
+
+        set({ items: next });
+
+        try {
+          await cartUpdate({
+            productId,
+            selectedSize: selectedSize ?? null,
+            selectedColor: selectedColorHex ?? null,
+            quantity: 1,
+            action: "increase",
+          });
+        } catch (error) {
+          set({ items: prev });
+          throw error;
+        }
+      },
+
+      decreaseQty: async (productId, selectedSize, selectedColorHex) => {
+        const prev = get().items;
+
+        const next = prev
+          .map((i) => {
+            const match =
+              i.productId === productId &&
+              (i.selectedSize ?? null) === (selectedSize ?? null) &&
+              (i.selectedColor?.hex ?? null) === (selectedColorHex ?? null);
+
+            return match ? { ...i, quantity: i.quantity - 1 } : i;
+          })
+          .filter((i) => i.quantity > 0);
+
+        set({ items: next });
+
+        try {
+          await cartUpdate({
+            productId,
+            selectedSize: selectedSize ?? null,
+            selectedColor: selectedColorHex ?? null,
+            quantity: 1,
+            action: "decrease",
+          });
+        } catch (error) {
+          set({ items: prev });
+          throw error;
+        }
+      },
+
+      clearCart: async () => {
+        const prev = get().items;
+        set({ items: [] });
+
+        try {
+          await cartClear();
+        } catch (error) {
+          set({ items: prev });
+          throw error;
+        }
+      },
     }),
-    {
-      name: "cart-storage",
-
-      // ✅ only persist items (don’t persist loggingOut/hydrated)
-      partialize: (state) => ({
-        items: state.items,
-      }),
-    }
-  )
+    { name: "cart-storage" },
+  ),
 );
 
 export default useCartStore;

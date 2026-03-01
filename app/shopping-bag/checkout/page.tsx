@@ -118,7 +118,7 @@ export default function GuestCheckoutPage() {
   const cartItems: CartLine[] = useMemo(() => {
     return (items as CartItem[])
       .map((cartItem) => {
-        const product = productMap.get(cartItem.id);
+        const product = productMap.get(cartItem.productId);
         return product ? ({ ...cartItem, product } as CartLine) : null;
       })
       .filter((x): x is CartLine => x !== null);
@@ -213,7 +213,7 @@ export default function GuestCheckoutPage() {
             productId: i.product.id,
             quantity: i.quantity,
             selectedSize: i.selectedSize ?? null,
-            selectedColor: i.selectedColor ?? null,
+            selectedColor: i.selectedColor?.hex ?? null,
           })),
         }),
       });
@@ -268,7 +268,7 @@ export default function GuestCheckoutPage() {
     } catch (e: any) {
       const msg = e?.message ?? "Something went wrong.";
       setError(msg);
-      showToast(msg, "error");
+      showToast('Could not initialise payment', "error");
     } finally {
       setLoading(false);
       payLock.current = false;
@@ -569,12 +569,7 @@ export default function GuestCheckoutPage() {
           </div>
 
           <div className="flex w-full h-max gap-2 flex-col items-start justify-center pt-4">
-              {error && (
-            <div className="mb-8 p-4 bg-red-50/50 border border-red-100 text-red-600 text-sm flex items-center gap-3 rounded-lg">
-              <IoInformationCircleOutline className="text-lg" /> {error}
-            </div>
-          )}
-
+        
             <button
               onClick={handlePay}
               disabled={loading || !isFormValid}
@@ -598,7 +593,7 @@ export default function GuestCheckoutPage() {
             <div className="space-y-6 mb-12 max-h-[50vh] overflow-y-auto">
               {cartItems.map((item) => (
                 <div
-                  key={`${item.id}-${item.selectedSize}`}
+                  key={`${item?.productId}-${item.selectedSize}`}
                   className="flex gap-4 items-center"
                 >
                   <div className="relative w-16 h-20 bg-foreground/3 rounded-lg overflow-hidden shrink-0">

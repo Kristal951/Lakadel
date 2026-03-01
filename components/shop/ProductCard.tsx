@@ -1,5 +1,4 @@
 "use client";
-import useCartStore from "@/store/cartStore";
 import Image from "next/image";
 import Link from "next/link";
 import { CiHeart } from "react-icons/ci";
@@ -11,26 +10,48 @@ import PriceContainer from "./PriceContainer";
 import { Product } from "@/store/types";
 import { useState } from "react";
 import { cld } from "@/lib";
+import { cartPut } from "@/lib/cartApi";
+import { useSession } from "next-auth/react";
+import useCartStore from "@/store/cartStore";
 
-export default function ProductCard(
-  props: Product & { index?: number }
-) {
-  const { id, name, images, price, sizes, colors, description, index = 999 } = props;
+export default function ProductCard(props: Product & { index?: number }) {
+  const {
+    id,
+    name,
+    images,
+    price,
+    sizes,
+    colors,
+    description,
+    index = 999,
+  } = props;
 
-  const { addToCart } = useCartStore();
   const { showToast } = useToast();
   const { currency } = useUserStore();
   const [showOverlay, setShowOverlay] = useState(false);
+  const { addToCart } = useCartStore();
 
   const img0 = images?.[0] ?? "/placeholder.png";
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const selectedSize = sizes?.[0] ?? undefined;
-    const selectedColor = colors?.[0]?.name ?? undefined;
+  const handleAddToCart = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
 
-    addToCart({ id, quantity: 1, selectedSize, selectedColor });
-    showToast("Item added to bag!", "success");
+    const selectedSize = sizes?.[0] ?? null;  
+    const selectedColor = colors?.[0] ?? undefined;  
+
+    try {
+      await addToCart({
+        productId: id,
+        quantity: 1,
+        selectedSize,
+        selectedColor,  
+        product: props,  
+      });
+      showToast("Item added to bag", "success");
+    } catch (error) {
+      showToast("Failed to add item to cart", "error");
+      console.error("Add to cart error:", error);  
+    }
   };
 
   return (

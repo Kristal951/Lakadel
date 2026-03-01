@@ -1,20 +1,25 @@
 "use client";
-import useCartStore from "@/store/cartStore";
+
 import useProductStore from "@/store/productStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { CgProfile } from "react-icons/cg";
 import { IoBagOutline, IoSearchOutline } from "react-icons/io5";
 import ProfileMenu from "../ui/ProfileMenu";
-import useUserStore from "@/store/userStore";
+import useCartStore from "@/store/cartStore";
+import { useSession } from "next-auth/react";
+import Spinner from "../ui/spinner";
 
 const Header = () => {
   const router = useRouter();
-  const { items } = useCartStore();
+
+  const { items, isSyncing } = useCartStore();
   const { query, setQuery } = useProductStore();
-  const { user } = useUserStore();
+
+  const { data: session } = useSession();
+  const user = session?.user as any;
 
   const [localQuery, setLocalQuery] = useState(query);
   const [open, setOpen] = useState(false);
@@ -27,13 +32,12 @@ const Header = () => {
     return () => clearTimeout(timer);
   }, [localQuery, setQuery]);
 
+  const cartCount = items.length;
+
   return (
     <nav
       className="fixed top-0 left-0 right-0 h-18 flex items-center md:justify-between md:px-6 px-2 z-50 border-0 border-b border-gray-100"
-      style={{
-        background: "var(--background)",
-        color: "var(--foreground)",
-      }}
+      style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
       <Link href="/shop" className="relative h-11 md:w-35 w-14 shrink-0">
         <Image
@@ -63,12 +67,16 @@ const Header = () => {
             className="p-2 rounded-full relative cursor-pointer hover:bg-foreground/10 transition-colors"
             aria-label="View Cart"
           >
-            {items.length > 0 && (
+            {cartCount > 0 && !isSyncing && (
               <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-[10px] font-bold text-background bg-foreground rounded-full">
-                {items.length}
+                {cartCount}
               </span>
             )}
-            <IoBagOutline className="w-6 h-6" />
+            {isSyncing ? (
+              <Spinner w="5" h="5" />
+            ) : (
+              <IoBagOutline className="w-6 h-6" />
+            )}
           </button>
 
           <div className="relative" ref={menuRef}>
@@ -79,10 +87,7 @@ const Header = () => {
                 width={32}
                 height={32}
                 className="rounded-full cursor-pointer hover:bg-foreground/10 transition-colors"
-                onClick={(e) => {
-             
-                  setOpen((prev) => !prev);
-                }}
+                onClick={() => setOpen((prev) => !prev)}
               />
             ) : (
               <button

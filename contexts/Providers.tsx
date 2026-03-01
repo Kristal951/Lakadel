@@ -3,10 +3,9 @@
 import { ToastProvider } from "@/hooks/useToast";
 import { SessionProvider } from "next-auth/react";
 import SessionSync from "./SessionSync";
-import CartSyncOnLogin from "./CartSyncOnLogin";
-import CartDebouncedSync from "./CartDebouncedSync";
 import StoreInitializer from "./StoreInitialiser";
 import ClientInit from "./ClientInit";
+import SyncCartOnLogin from "./CartSyncOnLogin";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,9 +14,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <StoreInitializer />
         <ClientInit />
         <SessionSync />
-        <CartSyncOnLogin />
-        <CartDebouncedSync />
-
+        <SyncCartOnLogin/>
         {children}
       </ToastProvider>
     </SessionProvider>

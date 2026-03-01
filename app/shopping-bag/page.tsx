@@ -11,75 +11,31 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Image from "next/image";
-import useCartStore from "@/store/cartStore";
 import { useRouter } from "next/navigation";
 import { IoBagOutline } from "react-icons/io5";
-import useProductStore from "@/store/productStore";
-import { loadStripe } from "@stripe/stripe-js";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useUserStore from "@/store/userStore";
 import PriceContainer from "@/components/shop/PriceContainer";
+import useCartStore from "@/store/cartStore";
 
 export default function ShoppingBag() {
-  const { items, removeFromCart, updateQuantity, clearCart } = useCartStore();
-  const { currency, user } = useUserStore();
-  const { products } = useProductStore();
+  const { currency } = useUserStore();
+  const { items } = useCartStore();
   const router = useRouter();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const cartItems = items ?? [];
+
+  const { increaseQty, decreaseQty, removeFromCart } = useCartStore();
 
   const goToShop = () => router.push("/shop");
 
-  const cartItems = items
-    .map((cartItem) => {
-      const product = products.find((p) => p.id === cartItem.id);
-      if (!product) return null;
-      return { ...cartItem, product };
-    })
-    .filter((item): item is any => item !== null);
-
-  const totalPrice = cartItems.reduce(
-    (sum, i) => sum + i.quantity * i.product.price,
-    0,
-  );
-
-  // const gotoCheckout = async () => {
-  //     router.push("/shopping-bag/checkout/guest");
-
-  //   try {
-  //     const createRes = await fetch("/api/users/orders/create", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         cartItems: cartItems.map((i) => ({
-  //           productId: i.product.id,
-  //           quantity: i.quantity,
-  //           price: i.product.price,
-  //         })),
-  //         total: totalPrice,
-  //         currency,
-  //         email: user.email,
-  //         userId: user.id,
-  //       }),
-  //     });
-
-  //     const createData = await createRes.json();
-  //     if (!createRes.ok) throw new Error(createData.error || "Failed to create order");
-
-  //     const initRes = await fetch("/api/users/paystack/initialise", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ orderId: createData.orderId }),
-  //     });
-
-  //     const initData = await initRes.json();
-  //     if (!initRes.ok) throw new Error(initData.error || "Failed to init Paystack");
-
-  //     window.location.href = initData.authorization_url;
-  //   } catch (error) {
-  //     console.error("Paystack checkout error:", error);
-  //     // optionally show toast
-  //   }
-  // };
+  const totalPrice = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      const price = parseFloat(item.product?.price) || 0;
+      const qty = Number(item.quantity) || 1;
+      return sum + price * qty;
+    }, 0);
+  }, [cartItems]);
 
   if (cartItems.length === 0) {
     return (
@@ -143,7 +99,6 @@ export default function ShoppingBag() {
             <span className="text-sm font-semibold">Are you sure?</span>
             <button
               onClick={() => {
-                clearCart();
                 setShowClearConfirm(false);
               }}
               className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-full"
@@ -162,106 +117,115 @@ export default function ShoppingBag() {
 
       <div className="grid lg:grid-cols-12 gap-25 items-start">
         <div className="lg:col-span-8 space-y-10">
-          {cartItems.map((item) => (
-            <div
-              key={`${item.id}-${item.selectedColor}-${item.selectedSize}`}
-              className="group relative flex flex-col sm:flex-row gap-8 border-0 border-b pb-6"
-            >
-              <div className="relative w-full sm:w-48 aspect-4/5 bg-neutral-100 rounded-4xl overflow-hidden">
-                <Image
-                  src={item.product.images[0]}
-                  alt={item.product.name}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-              </div>
+          {cartItems.map((item) => {
+            console.log(item)
+            const p = item.product?.order;
+             const imgSrc = item.product?.images?.[0] || "/placeholder.png";
+  const name = item.product?.name ?? "Product";
+  const price = item.product?.price ?? 0;
 
-              <div className="flex-1 flex flex-col py-2">
-                <div className="flex md:justify-between flex-col md:flex-row gap-1 items-start mb-1">
-                  <h3 className="text-2xl font-bold text-foreground leading-tight">
-                    {item.product.name}
-                  </h3>
-                  <PriceContainer
-                    price={item.product.price}
-                    currency={currency}
-                    textSize="2xl"
+            return (
+              <div
+                key={`${item.productId}-${item.selectedSize}-${item.selectedColor?.hex || "no-color"}`}
+                className="group relative flex flex-col sm:flex-row gap-8 border-0 border-b pb-6"
+              >
+                <div className="relative w-full sm:w-48 aspect-4/5 bg-neutral-100 rounded-4xl overflow-hidden">
+                  <Image
+                    src={imgSrc}
+                    alt={name}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2 text-sm uppercase tracking-wider font-semibold text-foreground/60">
-                  {item.selectedSize && (
-                    <span>
-                      Size:{" "}
-                      <span className="text-foreground">
-                        {item.selectedSize}
-                      </span>
-                    </span>
-                  )}
-                  {item.selectedColor && (
-                    <span>
-                      Color:{" "}
-                      <span className="text-foreground">
-                        {item.selectedColor}
-                      </span>
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-auto pt-8 flex items-center justify-between">
-                  <div className="flex items-center bg-background border border-neutral-100 rounded-full p-1.5 shadow-sm">
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.id,
-                          item.quantity - 1,
-                          item.selectedColor,
-                          item.selectedSize,
-                        )
-                      }
-                      className="w-8 h-8 flex items-center justify-center hover:bg-foreground/20 rounded-full transition-all disabled:opacity-20"
-                      disabled={item.quantity <= 1}
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-12 text-center font-bold text-lg">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.id,
-                          item.quantity + 1,
-                          item.selectedColor,
-                          item.selectedSize,
-                        )
-                      }
-                      className="w-8 h-8 flex items-center justify-center hover:bg-foreground/20 rounded-full transition-all"
-                    >
-                      <Plus size={14} />
-                    </button>
+                <div className="flex-1 flex flex-col py-2">
+                  <div className="flex md:justify-between flex-col md:flex-row gap-1 items-start mb-1">
+                    <h3 className="text-2xl font-bold text-foreground leading-tight">
+                      {name}
+                    </h3>
+                    <PriceContainer
+                      price={price}
+                      currency={currency}
+                      textSize="2xl"
+                    />
                   </div>
 
-                  <div className="flex gap-2">
-                    <button className="p-3 hover:bg-neutral-50 rounded-full transition-colors text-neutral-400 hover:text-red-500 border border-transparent hover:border-neutral-100">
-                      <Heart size={20} />
-                    </button>
-                    <button
-                      onClick={() =>
-                        removeFromCart(
-                          item.id,
-                          item.selectedColor,
-                          item.selectedSize,
-                        )
-                      }
-                      className="p-3 hover:bg-neutral-50 rounded-full transition-colors text-neutral-400 hover:text-black border border-transparent hover:border-neutral-100"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2 text-sm uppercase tracking-wider font-semibold text-foreground/60">
+                    {item.selectedSize && (
+                      <span>
+                        Size:{" "}
+                        <span className="text-foreground">
+                          {item.selectedSize}
+                        </span>
+                      </span>
+                    )}
+                    {item.selectedColor && (
+                      <span>
+                        Color:{" "}
+                        <span className="text-foreground">
+                          {item.selectedColor.name}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-auto pt-8 flex items-center justify-between">
+                    <div className="flex items-center bg-background border border-neutral-100 rounded-full p-1.5 shadow-sm">
+                      <button
+                        onClick={() =>
+                          decreaseQty(
+                            item.productId,
+                            item.selectedSize,
+                            item.selectedColor?.hex ?? null,
+                          )
+                        }
+                        disabled={item.quantity <= 1}
+                        className="w-8 h-8 flex items-center justify-center hover:bg-foreground/20 rounded-full transition-all disabled:opacity-20"
+                      >
+                        <Minus size={14} />
+                      </button>
+
+                      <span className="w-12 text-center font-bold text-lg">
+                        {item.quantity}
+                      </span>
+
+                      <button
+                        onClick={() =>
+                          increaseQty(
+                            item.productId,
+                            item.selectedSize,
+                            item.selectedColor?.hex ?? null,
+                          )
+                        }
+                        className="w-8 h-8 flex items-center justify-center hover:bg-foreground/20 rounded-full transition-all"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button className="p-3 hover:bg-neutral-50 rounded-full transition-colors text-neutral-400 hover:text-red-500 border border-transparent hover:border-neutral-100">
+                        <Heart size={20} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          removeFromCart(
+                            item.productId,
+                            item.selectedSize,
+                            item.selectedColor?.hex ?? null,
+                          )
+                        }
+                        // disabled={removingKey === keyOf(item)}
+                        className="p-3 hover:bg-neutral-50 rounded-full transition-colors text-neutral-400 hover:text-black border border-transparent hover:border-neutral-100 disabled:opacity-60"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <aside className="lg:col-span-4 space-y-6 sticky top-24">
@@ -281,17 +245,6 @@ export default function ShoppingBag() {
               <div className="flex justify-between text-background/60 font-medium">
                 <span>Shipping</span>
                 <span className="text-green-400">Calculated at checkout</span>
-              </div>
-
-              <div className="pt-4 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Promo Code"
-                  className="bg-foreground border border-background placeholder-background/80 rounded-md px-4 py-2 text-sm w-full focus:ring-1 focus:ring- outline-none"
-                />
-                <button className="bg-background px-4 py-2 rounded-xl text-xs text-foreground font-bold uppercase hover:bg-foreground hover:text-background transition-colors">
-                  Apply
-                </button>
               </div>
 
               <div className="pt-6 border-t border-background flex justify-between items-end">

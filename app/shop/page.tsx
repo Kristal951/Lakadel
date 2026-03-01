@@ -7,24 +7,23 @@ import useProductStore from "@/store/productStore";
 import EmptyState from "@/components/ui/EmptyState";
 import SortButton from "@/components/shop/SortButton";
 import SelectCountryModal from "@/components/ui/SelectCountryModal";
-import useUserStore from "@/store/userStore";
+import { useSession } from "next-auth/react";
 
 export default function Shop() {
   const { loading, error, fetchProducts, filteredAndSearchedProducts } =
     useProductStore();
-  const { user } = useUserStore();
 
+  const { status } = useSession();
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   useEffect(() => {
-    if (!user) {
-      setShowModal(true);
-    }
-  }, []);
+    if (status === "loading") return;
+    setShowModal(status !== "authenticated");
+  }, [status]);
 
   const productsToShow = filteredAndSearchedProducts();
 

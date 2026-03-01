@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import {prisma} from "@/lib/prisma";
 
 function isValidSignature(rawBody: string, signature: string | null) {
   if (!signature) return false;

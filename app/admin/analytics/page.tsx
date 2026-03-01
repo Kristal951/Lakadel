@@ -116,9 +116,7 @@ export default function AdminAnalyticsPage() {
         />
       </section>
 
-      {/* CHART + BREAKDOWN */}
       <section className="grid xl:grid-cols-3 gap-6">
-        {/* Revenue Chart */}
         <div className="xl:col-span-2 bg-background border border-foreground/10 rounded-3xl p-6">
           <div className="flex items-end justify-between gap-4 mb-6">
             <div>
@@ -129,7 +127,6 @@ export default function AdminAnalyticsPage() {
             </div>
           </div>
 
-          {/* Chart container */}
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
@@ -177,7 +174,6 @@ export default function AdminAnalyticsPage() {
                 />
                 <Legend />
 
-                {/* Revenue */}
                 <Area
                   type="monotone"
                   dataKey="revenue"
@@ -188,7 +184,6 @@ export default function AdminAnalyticsPage() {
                   fillOpacity={1}
                 />
 
-                {/* Profit */}
                 <Area
                   type="monotone"
                   dataKey="profit"
@@ -203,7 +198,6 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
 
-        {/* Orders Breakdown */}
         <div className="bg-background border border-foreground/10 rounded-3xl p-6">
           <h3 className="text-lg font-semibold mb-6">Order Breakdown</h3>
 
@@ -216,7 +210,6 @@ export default function AdminAnalyticsPage() {
         </div>
       </section>
 
-      {/* TOP PRODUCTS */}
       <section className="bg-background border border-foreground/10 rounded-3xl p-6">
         <h3 className="text-lg font-semibold mb-6">Top Selling Products</h3>
 

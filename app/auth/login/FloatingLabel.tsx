@@ -5,12 +5,13 @@ import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 export default function FloatingLabelLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { update } = useSession();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +24,7 @@ export default function FloatingLabelLogin() {
     if (err === "OAuthAccountNotLinked") {
       showToast(
         "This email already exists with another sign-in method. Use your original login method, or we can link Google.",
-        "error"
+        "error",
       );
       return;
     }
@@ -48,7 +49,12 @@ export default function FloatingLabelLogin() {
         return;
       }
 
+      await update();
+
+      router.refresh();
+
       showToast("Welcome back!", "success");
+
       router.push(result?.url || "/shop");
     } catch (err: any) {
       showToast(err?.message || "Login failed. Please try again.", "error");
