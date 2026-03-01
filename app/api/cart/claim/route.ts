@@ -43,8 +43,8 @@ export async function POST() {
             cartId_productId_selectedColor_selectedSize: {
               cartId: userCart.id,
               productId: it.productId,
-              selectedColor: it.selectedColor,
-              selectedSize: it.selectedSize,
+              selectedColor: it.selectedColor ?? "",
+              selectedSize: it.selectedSize ?? "",
             },
           },
           create: {
