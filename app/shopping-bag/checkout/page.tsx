@@ -472,7 +472,6 @@ export default function GuestCheckoutPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* PAYSTACK ROW */}
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("PAYSTACK")}
@@ -499,7 +498,7 @@ export default function GuestCheckoutPage() {
 
                       <div className="flex gap-4 flex-col">
                         <Image
-                          src="/assets/paystack.png"
+                          src="/assets/Paystack.png"
                           alt="Paystack Logo"
                           width={100}
                           height={20}
@@ -544,7 +543,7 @@ export default function GuestCheckoutPage() {
 
                       <div className="flex flex-col gap-4">
                         <Image
-                          src="/assets/stripe.png"
+                          src="/assets/Stripe.png"
                           alt="Stripe Logo"
                           width={100}
                           height={40}
