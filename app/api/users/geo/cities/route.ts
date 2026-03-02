@@ -10,6 +10,7 @@ export async function POST(req: Request) {
   const url = state 
     ? "https://countriesnow.space/api/v0.1/countries/state/cities"
     : "https://countriesnow.space/api/v0.1/countries/cities";
+    console.log(url)
 
   const body = state ? { country, state } : { country };
 

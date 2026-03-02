@@ -17,7 +17,13 @@ import PhoneInput, {
 } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { countries } from "@/lib";
-import { CartItem, Product, ShippingAddress } from "@/store/types";
+import {
+  CartItem,
+  Country,
+  Product,
+  ShippingAddress,
+  State,
+} from "@/store/types";
 import { useToast } from "@/hooks/useToast";
 
 type PaymentMethod = "PAYSTACK" | "STRIPE";
@@ -104,9 +110,41 @@ export default function GuestCheckoutPage() {
   const payLock = useRef(false);
 
   const [guestId, setGuestId] = useState<string | null>(null);
+  const [countryData, setCountryData] = useState<any[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string>("");
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setCountriesLoading(true);
+      try {
+        const res = await fetch("/api/users/geo/countries", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed: ${res.status}`);
+        }
+        const json = await res.json();
+        if (!json.error) {
+          setCountryData(json.data);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setCountriesLoading(false);
+      }
+    })();
   }, []);
 
   const productMap = useMemo(() => {
@@ -165,9 +203,6 @@ export default function GuestCheckoutPage() {
     postalCode: "",
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
-
   const phoneOk = useMemo(() => !!phone && isValidPhoneNumber(phone), [phone]);
 
   const isFormValid = useMemo(() => {
@@ -198,7 +233,6 @@ export default function GuestCheckoutPage() {
     setLoading(true);
 
     try {
-      // 1) Create order draft (server must compute totals from DB)
       const orderRes = await fetch("/api/users/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,7 +241,7 @@ export default function GuestCheckoutPage() {
           phone: phone ? formatPhoneNumberIntl(phone) : null,
           currency,
           shippingAddress: shipping,
-          guestId: guestId, // ✅ include explicitly
+          guestId: guestId,
           userId: user?.id ?? null,
           items: cartItems.map((i) => ({
             productId: i.product.id,
@@ -268,12 +302,55 @@ export default function GuestCheckoutPage() {
     } catch (e: any) {
       const msg = e?.message ?? "Something went wrong.";
       setError(msg);
-      showToast('Could not initialise payment', "error");
+      showToast("Could not initialise payment", "error");
     } finally {
       setLoading(false);
       payLock.current = false;
     }
   };
+
+  const countryList = countryData?.length ? countryData : countries;
+
+  useEffect(() => {
+    if (!shipping.country) return;
+
+    const selectedCountry = shipping.country;
+    let cancelled = false;
+
+    (async () => {
+      setGeoError("");
+      setStates([]);
+      setCities([]);
+      setStatesLoading(true);
+
+      setShipping((prev) => ({
+        ...prev,
+        state: selectedCountry === "Nigeria" ? "Lagos" : "",
+        city: "",
+      }));
+
+      try {
+        const res = await fetch("/api/users/geo/states", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: selectedCountry }),
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error || "Failed to fetch states");
+
+        if (!cancelled) setStates(json?.data?.states || json?.data || []);
+      } catch (err: any) {
+        if (!cancelled) setGeoError(err?.message || "Failed to load states");
+      } finally {
+        if (!cancelled) setStatesLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shipping.country]);
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-foreground selection:text-background">
@@ -366,7 +443,6 @@ export default function GuestCheckoutPage() {
                 </div>
               </section>
 
-              {/* SECTION 02 */}
               <section>
                 <div className="flex items-center gap-4 mb-8">
                   <span className="text-xs font-bold w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center">
@@ -401,23 +477,14 @@ export default function GuestCheckoutPage() {
                         }
                         className="bg-transparent border-b border-foreground/20 py-3 text-sm focus:border-foreground outline-none transition-colors"
                       >
-                        {countries.map((c) => (
-                          <option key={c.code} value={c.name}>
+                        {countryList.map((c: Country) => (
+                          <option key={c.iso2 || c.code} value={c.name}>
                             {c.name}
                           </option>
                         ))}
                       </select>
                     </div>
-                    <ModernInput
-                      label="City"
-                      value={shipping.city}
-                      onChange={(v: any) =>
-                        setShipping({ ...shipping, city: v })
-                      }
-                    />
-                  </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
                     <div className="group flex flex-col gap-2">
                       <label className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
                         State
@@ -425,22 +492,39 @@ export default function GuestCheckoutPage() {
                       <select
                         value={shipping.state}
                         onChange={(e) =>
-                          setShipping({ ...shipping, state: e.target.value })
+                          setShipping((prev) => ({
+                            ...prev,
+                            state: e.target.value,
+                          }))
                         }
                         className="bg-transparent border-b border-foreground/20 py-3 text-sm focus:border-foreground outline-none transition-colors"
-                        disabled={shipping.country !== "Nigeria"}
+                        disabled={statesLoading || !states.length}
                       >
-                        {shipping.country === "Nigeria" ? (
-                          NIGERIA_STATES.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
+                        {!states.length ? (
+                          <option value="">
+                            {statesLoading
+                              ? "Loading states..."
+                              : "Select state"}
+                          </option>
+                        ) : (
+                          states.map((state: State) => (
+                            <option key={state.state_code} value={state.name}>
+                              {state.name}
                             </option>
                           ))
-                        ) : (
-                          <option value="">Select State</option>
                         )}
                       </select>
                     </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <ModernInput
+                      label="City"
+                      value={shipping.city}
+                      onChange={(v: any) =>
+                        setShipping({ ...shipping, city: v })
+                      }
+                    />
                     <ModernInput
                       label="Street Address"
                       value={shipping.streetAddress}
@@ -460,7 +544,6 @@ export default function GuestCheckoutPage() {
                 </div>
               </section>
 
-              {/* SECTION 03 */}
               <section>
                 <div className="flex items-center gap-4 mb-8">
                   <span className="text-xs font-bold w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center">
@@ -565,10 +648,8 @@ export default function GuestCheckoutPage() {
                 </div>
               </section>
             </div>
-          </div>
 
-          <div className="flex w-full h-max gap-2 flex-col items-start justify-center pt-4">
-        
+            <div className="flex w-full h-max gap-2 flex-col items-center justify-center pt-10">
             <button
               onClick={handlePay}
               disabled={loading || !isFormValid}
@@ -580,6 +661,7 @@ export default function GuestCheckoutPage() {
                 `Complete Purchase — ${formatMoney(totalAmount, currency)}`
               )}
             </button>
+          </div>
           </div>
         </div>
 

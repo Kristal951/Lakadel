@@ -8,10 +8,12 @@ import EmptyState from "@/components/ui/EmptyState";
 import SortButton from "@/components/shop/SortButton";
 import SelectCountryModal from "@/components/ui/SelectCountryModal";
 import { useSession } from "next-auth/react";
+import useUserStore from "@/store/userStore";
 
 export default function Shop() {
   const { loading, error, fetchProducts, filteredAndSearchedProducts } =
     useProductStore();
+  const { loggingOut } = useUserStore();
 
   const { status } = useSession();
   const [showModal, setShowModal] = useState(false);
@@ -30,6 +32,14 @@ export default function Shop() {
   if (loading) {
     return (
       <div className="flex w-full h-full items-center justify-center">
+        <Spinner w="10" h="10" />
+      </div>
+    );
+  }
+
+  if (loggingOut) {
+    return (
+      <div className="w-full fixed flex inset-0 bg-black/40 z-100 items-center justify-center">
         <Spinner w="10" h="10" />
       </div>
     );

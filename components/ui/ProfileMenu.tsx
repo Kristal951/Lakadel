@@ -18,7 +18,7 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const { logout, currency, currencySymbol } = useUserStore();
+  const { logout, currency, currencySymbol, setLoggingOut } = useUserStore();
   const { data: session, status } = useSession();
   const user = session?.user as
     | (typeof session extends { user: infer U } ? U : any)
@@ -50,12 +50,18 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
   };
 
   const handleLogout = async () => {
+    setLoggingOut(true);
     setOpen(false);
-    useCartStore.getState().clearLocalCart();
-    logout();
-    await signOut({ redirect: false });
-
-    router.push("/auth/login");
+    try {
+      useCartStore.getState().clearLocalCart();
+      logout();
+      await signOut({ redirect: false });
+      router.push("/auth/login");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const guardLinkClick = (e: React.MouseEvent, href: string) => {
@@ -85,7 +91,6 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            {/* ✅ UX: show Guest vs Account */}
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
               {isGuest ? "Guest" : "Account"}
             </p>

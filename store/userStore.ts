@@ -26,8 +26,10 @@ const useUserStore = create<UserState>((set) => ({
   currency: "USD",
   currencySymbol: "$",
   country: "",
+  loggingOut: false,
 
   setUser: (user) => set({ user, isAuthenticated: true, loading: false }),
+  setLoggingOut: (loggingOut) => set({ loggingOut }),
 
   setCurrency: (currency: string) => {
     set({ currency });

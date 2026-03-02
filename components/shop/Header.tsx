@@ -66,6 +66,7 @@ const Header = () => {
             onClick={goToBag}
             className="p-2 rounded-full relative cursor-pointer hover:bg-foreground/10 transition-colors"
             aria-label="View Cart"
+            disabled={isSyncing}
           >
             {cartCount > 0 && !isSyncing && (
               <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-[10px] font-bold text-background bg-foreground rounded-full">

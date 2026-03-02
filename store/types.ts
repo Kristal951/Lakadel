@@ -133,8 +133,10 @@ export interface UserState {
   currency: string;
   country: string;
   currencySymbol: string;
+  loggingOut: boolean;
 
   setUser: (user: User) => void;
+  setLoggingOut:(loggingOut: boolean) => void
   setCurrency: (currency: string) => void;
   setCountry: (country: string) => void;
   logout: () => void;
@@ -160,3 +162,13 @@ export type CartItemPayload = {
   selectedColor: string | null;
   selectedSize: string | null;
 };
+
+export type Country = {
+  name: string;
+  iso2: string;
+  lat?: string;
+  long?: number;
+  code?: number;
+};
+
+export type State = { state_code?: string; name: string };
