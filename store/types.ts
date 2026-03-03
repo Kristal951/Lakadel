@@ -136,7 +136,7 @@ export interface UserState {
   loggingOut: boolean;
 
   setUser: (user: User) => void;
-  setLoggingOut:(loggingOut: boolean) => void
+  setLoggingOut: (loggingOut: boolean) => void;
   setCurrency: (currency: string) => void;
   setCountry: (country: string) => void;
   logout: () => void;
@@ -172,3 +172,32 @@ export type Country = {
 };
 
 export type State = { state_code?: string; name: string };
+
+export type AppNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  action?: string;
+  link?: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export type Store = {
+  notifications: AppNotification[];
+  unreadCount: number;
+  hasFetched: boolean;
+
+  fetchNotifications: () => Promise<void>;
+  push: (n: AppNotification) => void;
+  markRead: (id: string) => Promise<void>;
+  markAllRead: () => Promise<void>;
+  reset: () => void;
+};
+
+export type Body = {
+  orderId: string;
+  userId?: string | null;
+  guestId?: string | null;
+};

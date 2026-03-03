@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { paystackInitialize } from "@/lib/paystack";
+import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
+import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
+import { Body } from "@/store/types";
 
 export const runtime = "nodejs";
-
-type Body = {
-  orderId: string;
-  userId?: string | null;
-  guestId?: string | null;
-};
 
 function getBaseUrl() {
   const base =
@@ -51,6 +48,7 @@ export async function POST(req: Request) {
         totalKobo: true,
         userId: true,
         guestId: true,
+        paymentRef: true, 
       },
     });
 
@@ -83,13 +81,29 @@ export async function POST(req: Request) {
       throw new Error("Paystack initialize did not return reference/url");
     }
 
+    const firstTimeInit = !order.paymentRef;
+    console.log(firstTimeInit, 'firstTimeInit')
+
     await prisma.order.update({
       where: { id: order.id },
       data: {
+        status: "PENDING", 
         paymentRef: reference,
         paymentMethod: "PAYSTACK",
       },
     });
+
+    if (firstTimeInit && order.userId) {
+      console.log(order.userId,'order.userID')
+      const notif = getNotificationForStatus("PENDING", order.id);
+      if (notif) {
+        await notifyUserRealtime({
+          userId: order.userId,
+          ...notif,
+          link: `/orders/${order.id}`,
+        });
+      }
+    }
 
     return NextResponse.json({ authorization_url, reference });
   } catch (e: any) {

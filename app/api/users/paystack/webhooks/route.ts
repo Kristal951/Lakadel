@@ -1,6 +1,11 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
+import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
+import { prisma } from "@/lib/prisma";
+
+
+export const runtime = "nodejs";
 
 function isValidSignature(rawBody: string, signature: string | null) {
   if (!signature) return false;
@@ -23,42 +28,68 @@ export async function POST(req: Request) {
 
   const event = JSON.parse(rawBody);
 
-  if (event?.event === "charge.success") {
-    const data = event.data;
+  if (event?.event !== "charge.success") {
+    return NextResponse.json({ ok: true });
+  }
 
-    const orderId = data?.metadata?.orderId as string | undefined;
-    const reference = data?.reference as string | undefined;
-    const amountKobo = data?.amount as number | undefined;
+  const data = event.data;
 
-    if (!orderId || !reference || typeof amountKobo !== "number") {
-      return NextResponse.json({ ok: true });
-    }
+  const orderId = data?.metadata?.orderId as string | undefined;
+  const reference = data?.reference as string | undefined;
+  const amountKobo = data?.amount as number | undefined;
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) return NextResponse.json({ ok: true });
+  if (!orderId || !reference || typeof amountKobo !== "number") {
+    return NextResponse.json({ ok: true });
+  }
 
-    // Validate amount (prevents underpayment / tampering)
-    if (order.totalKobo !== amountKobo) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, userId: true, status: true, totalKobo: true },
+  });
+
+  if (!order) return NextResponse.json({ ok: true });
+
+  if (order.totalKobo !== amountKobo) {
+    if (order.status !== "FAILED") {
       await prisma.order.update({
         where: { id: orderId },
         data: { status: "FAILED" },
       });
-      return NextResponse.json({ ok: true });
-    }
 
-    // Idempotency: don't re-update paid orders
-    if (order.status !== "PAID") {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: "PAID",
-          paidAt: new Date(),
-          paymentRef: reference,
-        },
-      });
+      if (order.userId) {
+        const notif = getNotificationForStatus("FAILED", order.id);
+        if (notif) {
+          await notifyUserRealtime({
+            userId: order.userId,
+            ...notif,
+            link: `/orders/${order.id}`,
+          });
+        }
+      }
     }
-
     return NextResponse.json({ ok: true });
+  }
+
+  if (order.status !== "PAID") {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+        paymentRef: reference,
+      },
+    });
+
+    if (order.userId) {
+      const notif = getNotificationForStatus("PAID", order.id);
+      if (notif) {
+        await notifyUserRealtime({
+          userId: order.userId,
+          ...notif,
+          link: `/orders/${order.id}`,
+        });
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -7,24 +7,25 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(uuid())
-  email           String?      @unique
+  id              String         @id @default(uuid())
+  email           String?        @unique
   name            String?
   password        String?
-  isGuest         Boolean      @default(false)
-  guestID         String?      @unique   // ✅ add @unique
-  authProvider    AuthProvider @default(EMAIL)
-  createdAt       DateTime     @default(now())
-  currency        String       @default("NGN")
+  isGuest         Boolean        @default(false)
+  guestID         String?        @unique
+  authProvider    AuthProvider   @default(EMAIL)
+  createdAt       DateTime       @default(now())
+  currency        String         @default("NGN")
   emailVerified   DateTime?
   image           String?
   phone           String?
   shippingAddress Json?
-  role            Role         @default(USER)
+  role            Role           @default(USER)
   accounts        Account[]
   cart            Cart?
   orders          Order[]
   sessions        Session[]
+  notifications   Notification[]
 
   @@index([guestID]) // optional but helpful
 }
@@ -77,13 +78,13 @@ model Product {
   images      String[]
   updatedAt   DateTime    @updatedAt
   colors      Json
-  totalStock  Int      @default(0)
+  totalStock  Int         @default(0)
   cartItems   CartItem[]
   orderItems  OrderItem[]
-  category  String?
-  status    String  @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
-  sku       String?  @unique
-  gender    String?
+  category    String?
+  status      String      @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
+  sku         String?     @unique
+  gender      String?
   shippingFee String?
 }
 
@@ -119,7 +120,7 @@ model Order {
   id              String      @id @default(uuid())
   userId          String?
   guestId         String?
-  customerName    String?   
+  customerName    String?
   total           Float
   createdAt       DateTime    @default(now())
   currency        String      @default("NGN")
@@ -132,23 +133,39 @@ model Order {
   shippingAddress Json?
   user            User?       @relation(fields: [userId], references: [id])
   orderItems      OrderItem[]
-  shippingFee Int @default(0)
-  subTotal    Int @default(0)
-  paymentMethod    String?
+  shippingFee     Int         @default(0)
+  subTotal        Int         @default(0)
+  paymentMethod   String?
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int     @default(1)
-  price     Float
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id            String  @id @default(uuid())
+  orderId       String
+  productId     String
+  quantity      Int     @default(1)
+  price         Float
+  order         Order   @relation(fields: [orderId], references: [id])
+  product       Product @relation(fields: [productId], references: [id])
   selectedColor String?
   selectedSize  String?
-  unitPriceKobo Int @default(0)     
-  lineTotalKobo Int @default(0)     
+  unitPriceKobo Int     @default(0)
+  lineTotalKobo Int     @default(0)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  action    String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
 }
 
 enum OrderStatus {
