@@ -137,12 +137,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // 4. Mark as paid once only
   const didPay = await prisma.$transaction(async (tx) => {
     const updatedPaid = await tx.order.updateMany({
       where: {
         id: orderId,
-        status: { notIn: ["PAID", "CANCELLED", "DELIVERED"] },
+        status: { in: ["PENDING", "FAILED"] },
       },
       data: {
         status: "PAID",

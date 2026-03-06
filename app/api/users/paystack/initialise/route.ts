@@ -58,9 +58,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    if (order.status === "PAID") {
+    if (!["PENDING", "FAILED"].includes(order.status)) {
       return NextResponse.json(
-        { error: "Order already paid" },
+        { error: `Cannot initialize payment for order with status ${order.status}` },
         { status: 409 },
       );
     }
@@ -68,27 +68,31 @@ export async function POST(req: Request) {
     if (userId && order.userId && order.userId !== userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
+
     if (!userId && guestId && order.guestId && order.guestId !== guestId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
+
+    const firstTimeInit = !order.paymentRef;
 
     const init = await paystackInitialize({
       email: order.customerEmail,
       amountKobo: order.totalKobo,
       callback_url: callbackUrl,
-      metadata: { orderId: order.id, app: "Lakadel" },
+      metadata: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        app: "Lakadel",
+        retry: !firstTimeInit,
+      },
     });
 
     const reference = init?.data?.reference as string | undefined;
-    const authorization_url = init?.data?.authorization_url as
-      | string
-      | undefined;
+    const authorization_url = init?.data?.authorization_url as string | undefined;
 
     if (!reference || !authorization_url) {
       throw new Error("Paystack initialize did not return reference/url");
     }
-
-    const firstTimeInit = !order.paymentRef;
 
     await prisma.order.update({
       where: { id: order.id },
@@ -99,19 +103,20 @@ export async function POST(req: Request) {
       },
     });
 
-    if (firstTimeInit && order.userId) {
+    if (firstTimeInit && order.userId && order.orderNumber) {
       const orderRef = formatOrderNumber(order.orderNumber);
 
       const notif = getNotificationForStatus("PENDING", {
         orderId: order.id,
         orderRef,
       });
+
       if (notif) {
         await notifyUserRealtime({
           userId: order.userId,
           ...notif,
           orderId: order.id,
-          link: `/orders/${formatOrderNumber(order.orderNumber)}`,
+          link: `/orders/${order.id}`,
         });
       }
     }

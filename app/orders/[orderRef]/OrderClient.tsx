@@ -2,6 +2,7 @@
 import { Mail, MapPin, Phone, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { IoArrowBackOutline } from "react-icons/io5";
 
 const money = (kobo: number) =>
@@ -46,6 +47,38 @@ const OrderClient = ({ order, orderRef }: { order: any; orderRef: string }) => {
   const pill = statusLabel(order.status);
   const shippingAddress = order.shippingAddress;
   const name = order.customerName || shippingAddress.fullName;
+  const [retrying, setRetrying] = useState(false);
+
+  const handleRetryPayment = async () => {
+    try {
+      setRetrying(true);
+
+      const res = await fetch("/api/users/paystack/initialise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to retry payment");
+      }
+
+      if (!data?.authorization_url) {
+        throw new Error("Paystack did not return an authorization URL");
+      }
+
+      window.location.href = data.authorization_url;
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Unable to retry payment");
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -180,6 +213,14 @@ const OrderClient = ({ order, orderRef }: { order: any; orderRef: string }) => {
                             <button className="rounded-xl border border-foreground/10 px-3 py-1.5 text-xs font-semibold hover:bg-foreground/5 transition">
                               Cancel order
                             </button>
+                            {["PENDING", "FAILED"].includes(order.status) && (
+                              <button
+                                onClick={handleRetryPayment}
+                                className="rounded-xl bg-foreground px-4 py-2 text-background"
+                              >
+                                Retry Payment
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
