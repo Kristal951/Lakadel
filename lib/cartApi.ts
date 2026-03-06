@@ -123,4 +123,3 @@ export async function fetchProduct(productId: string) {
 
   return res.json();
 }
-

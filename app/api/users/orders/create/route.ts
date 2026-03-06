@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { generateOrderNumber } from "@/lib/cartDB";
+import { Prisma } from "@prisma/client";
 
-// Minimal helpers (no extra libs)
 function badRequest(message: string, extra?: any) {
   return NextResponse.json({ error: message, ...extra }, { status: 400 });
 }
@@ -10,16 +11,37 @@ function normalizeCurrency(value?: string) {
   const c = String(value || "NGN")
     .trim()
     .toUpperCase();
-  // whitelist what you support
   const allowed = new Set(["NGN", "USD", "GBP", "EUR"]);
   return allowed.has(c) ? c : "NGN";
+}
+
+function normalizeSelectedColor(
+  value: unknown,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (value === null || value === undefined || value === "") {
+    return Prisma.JsonNull;
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed as Prisma.InputJsonValue;
+    } catch {
+      return { name: value };
+    }
+  }
+
+  if (typeof value === "object") {
+    return value as Prisma.InputJsonValue;
+  }
+
+  return Prisma.JsonNull;
 }
 
 type CartItemInput = {
   productId: string;
   quantity: number;
-  // per-item variant info (so each item can differ)
-  selectedColor?: string | null;
+  selectedColor?: { name: string; hex: string } | null;
   selectedSize?: string | null;
 };
 
@@ -34,6 +56,15 @@ type ShippingAddressInput = {
   postalCode?: string;
 };
 
+function isColorObj(v: any): v is { name: string; hex: string } {
+  return (
+    v &&
+    typeof v === "object" &&
+    typeof v.name === "string" &&
+    typeof v.hex === "string"
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
@@ -45,6 +76,7 @@ export async function POST(req: Request) {
     const userId = body.userId ? String(body.userId) : null;
     const phone = String(body.phone || "").trim();
     const currency = normalizeCurrency(body.currency);
+    const name = String(body?.name);
 
     const shippingAddress: ShippingAddressInput | null =
       body.shippingAddress && typeof body.shippingAddress === "object"
@@ -64,9 +96,10 @@ export async function POST(req: Request) {
         return badRequest("Each item.productId is required");
       if (!Number.isInteger(item.quantity) || item.quantity < 1)
         return badRequest("Each item.quantity must be an integer >= 1");
-
-      if (item.selectedColor != null && typeof item.selectedColor !== "string")
-        return badRequest("selectedColor must be a string");
+      if (item.selectedColor != null && !isColorObj(item.selectedColor))
+        return badRequest(
+          "selectedColor must be { name: string; hex: string } or null",
+        );
       if (item.selectedSize != null && typeof item.selectedSize !== "string")
         return badRequest("selectedSize must be a string");
     }
@@ -90,6 +123,7 @@ export async function POST(req: Request) {
     }, 0);
 
     const totalMinor = Math.round(computedTotal * 100);
+    const orderNumber = await generateOrderNumber();
 
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
@@ -97,7 +131,9 @@ export async function POST(req: Request) {
           userId,
           customerEmail: email,
           customerPhone: phone || null,
+          customerName: name,
           currency,
+          orderNumber,
           status: "PENDING",
 
           total: computedTotal,
@@ -107,18 +143,16 @@ export async function POST(req: Request) {
 
           orderItems: {
             create: cartItems.map((i) => {
-              const unitPriceKobo = priceMap.get(String(i.productId))!;
+              const unitPriceMajor = priceMap.get(String(i.productId))!;
+              const unitPriceKobo = Math.round(unitPriceMajor * 100);
               const lineTotalKobo = unitPriceKobo * i.quantity;
 
               return {
-                productId: String(i.productId),
+                product: { connect: { id: String(i.productId) } },
                 quantity: i.quantity,
-
-                price: unitPriceKobo / 100,
-
-                selectedColor: i.selectedColor ?? null,
+                price: unitPriceMajor,
+                selectedColor: normalizeSelectedColor(i.selectedColor),
                 selectedSize: i.selectedSize ?? null,
-
                 unitPriceKobo,
                 lineTotalKobo,
               };

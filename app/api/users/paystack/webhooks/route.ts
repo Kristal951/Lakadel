@@ -1,6 +1,11 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
+import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
+import { clearCartForPayer, formatOrderNumber } from "@/lib/cartDB";
+
+export const runtime = "nodejs";
 
 function isValidSignature(rawBody: string, signature: string | null) {
   if (!signature) return false;
@@ -21,44 +26,108 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const event = JSON.parse(rawBody);
+  let event: any;
+  try {
+    event = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ ok: true });
+  }
 
-  if (event?.event === "charge.success") {
-    const data = event.data;
+  if (event?.event !== "charge.success") {
+    return NextResponse.json({ ok: true });
+  }
 
-    const orderId = data?.metadata?.orderId as string | undefined;
-    const reference = data?.reference as string | undefined;
-    const amountKobo = data?.amount as number | undefined;
+  const data = event.data;
 
-    if (!orderId || !reference || typeof amountKobo !== "number") {
-      return NextResponse.json({ ok: true });
-    }
+  const orderId = data?.metadata?.orderId as string | undefined;
+  const reference = data?.reference as string | undefined;
+  const amountKobo = data?.amount as number | undefined;
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) return NextResponse.json({ ok: true });
+  if (!orderId || !reference || typeof amountKobo !== "number") {
+    return NextResponse.json({ ok: true });
+  }
 
-    // Validate amount (prevents underpayment / tampering)
-    if (order.totalKobo !== amountKobo) {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { status: "FAILED" },
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      userId: true,
+      guestId: true,
+      status: true,
+      totalKobo: true,
+      orderNumber: true,
+    },
+  });
+
+  if (!order) return NextResponse.json({ ok: true });
+
+  if (order.totalKobo !== amountKobo) {
+    const updatedFailed = await prisma.order.updateMany({
+      where: { id: orderId, status: { notIn: ["PAID", "FAILED"] } },
+      data: {
+        status: "FAILED",
+        paymentMethod: "PAYSTACK",
+        paymentRef: reference,
+      },
+    });
+
+    if (updatedFailed.count > 0 && order.userId) {
+      const orderRef = formatOrderNumber(order.orderNumber);
+
+      const notif = getNotificationForStatus("PENDING", {
+        orderId: order.id,
+        orderRef,
       });
-      return NextResponse.json({ ok: true });
-    }
-
-    // Idempotency: don't re-update paid orders
-    if (order.status !== "PAID") {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: "PAID",
-          paidAt: new Date(),
-          paymentRef: reference,
-        },
-      });
+      if (notif) {
+        await notifyUserRealtime({
+          userId: order.userId,
+          ...notif,
+          link: `/orders/${order.id}`,
+        });
+      }
     }
 
     return NextResponse.json({ ok: true });
+  }
+
+  const didPay = await prisma.$transaction(async (tx) => {
+    const updatedPaid = await tx.order.updateMany({
+      where: { id: orderId, status: { not: "PAID" } },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+        paymentMethod: "PAYSTACK",
+        paymentRef: reference,
+      },
+    });
+
+    if (updatedPaid.count === 0) return false;
+
+    await clearCartForPayer({
+      tx: tx as any,
+      userId: order.userId,
+      guestId: order.guestId,
+    });
+
+    return true;
+  });
+
+  if (!didPay) return NextResponse.json({ ok: true });
+
+  if (order.userId) {
+    const orderRef = formatOrderNumber(order.orderNumber);
+
+    const notif = getNotificationForStatus("PAID", {
+      orderId: order.id,
+      orderRef,
+    });
+    if (notif) {
+      await notifyUserRealtime({
+        userId: order.userId,
+        ...notif,
+        link: `/orders/${formatOrderNumber(order.orderNumber)}`,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -214,7 +214,6 @@ export default function ShoppingBag() {
                             item.selectedColor?.hex ?? null,
                           )
                         }
-                        // disabled={removingKey === keyOf(item)}
                         className="p-3 hover:bg-neutral-50 rounded-full transition-colors text-neutral-400 hover:text-black border border-transparent hover:border-neutral-100 disabled:opacity-60"
                       >
                         <Trash2 size={20} />

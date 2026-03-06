@@ -1,3 +1,5 @@
+import { NotificationType, OrderStatus } from "@prisma/client";
+
 export interface Product {
   id: string;
   name: string;
@@ -133,8 +135,10 @@ export interface UserState {
   currency: string;
   country: string;
   currencySymbol: string;
+  loggingOut: boolean;
 
   setUser: (user: User) => void;
+  setLoggingOut: (loggingOut: boolean) => void;
   setCurrency: (currency: string) => void;
   setCountry: (country: string) => void;
   logout: () => void;
@@ -157,6 +161,57 @@ export interface ExchangeRateState {
 export type CartItemPayload = {
   productId: string;
   quantity: number;
-  selectedColor: string | null;
+ selectedColor?: { name: string; hex: string } | string | null;
   selectedSize: string | null;
+};
+
+export type Country = {
+  name: string;
+  iso2: string;
+  lat?: string;
+  long?: number;
+  code?: number;
+};
+
+export type State = { state_code?: string; name: string };
+
+export type AppNotification = {
+  id: string;
+  title: string;
+  userId: string;
+  message: string;
+  type: NotificationType;
+  action?: string;
+  link?: string | null;
+  read: boolean;
+  status: OrderStatus;
+  createdAt: string;
+  orderId?: string;
+};
+
+export type Store = {
+  notifications: AppNotification[];
+  unreadCount: number;
+  hasFetched: boolean;
+
+  fetchNotifications: () => Promise<void>;
+  push: (n: AppNotification) => void;
+  markRead: (id: string) => Promise<void>;
+  markAllRead: () => Promise<void>;
+  reset: () => void;
+};
+
+export type Body = {
+  orderId: string;
+  userId?: string | null;
+  guestId?: string | null;
+};
+export type CreateNotificationInput = Omit<
+  AppNotification,
+  "id" | "read" | "createdAt"
+>;
+
+export type SelectedColor = {
+  name: string;
+  hex: string;
 };

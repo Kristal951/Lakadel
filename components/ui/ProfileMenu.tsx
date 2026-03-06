@@ -1,7 +1,7 @@
 "use client";
 
 import useUserStore from "@/store/userStore";
-import { Heart } from "lucide-react";
+import { Heart, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect } from "react";
 import { FiSettings, FiLogOut } from "react-icons/fi";
@@ -18,7 +18,7 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const { logout, currency, currencySymbol } = useUserStore();
+  const { logout, currency, currencySymbol, setLoggingOut } = useUserStore();
   const { data: session, status } = useSession();
   const user = session?.user as
     | (typeof session extends { user: infer U } ? U : any)
@@ -50,12 +50,18 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
   };
 
   const handleLogout = async () => {
+    setLoggingOut(true);
     setOpen(false);
-    useCartStore.getState().clearLocalCart();
-    logout();
-    await signOut({ redirect: false });
-
-    router.push("/auth/login");
+    try {
+      useCartStore.getState().clearLocalCart();
+      logout();
+      await signOut({ redirect: false });
+      router.push("/auth/login");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const guardLinkClick = (e: React.MouseEvent, href: string) => {
@@ -85,7 +91,6 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            {/* ✅ UX: show Guest vs Account */}
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
               {isGuest ? "Guest" : "Account"}
             </p>
@@ -119,6 +124,20 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
             Wishlist
           </Link>
         </li>
+        {user.role === "ADMIN" && (
+          <li>
+            <Link
+              href="/admin"
+              className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
+                !isAuthedUser ? "cursor-not-allowed opacity-50" : ""
+              }`}
+              onClick={(e) => guardLinkClick(e, "/admin")}
+            >
+              <Shield className="w-5 h-5 mr-2" />
+              Admin Dashboard
+            </Link>
+          </li>
+        )}
 
         <li>
           <Link

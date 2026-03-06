@@ -87,7 +87,6 @@ export default function SettingsPage() {
           
           {activeTab === "appearance" && <AppearanceTab user={user}/>}
 
-          {/* Save Button Floating/Fixed */}
           <div className="pt-6 flex items-center justify-between border-t border-slate-100">
             <p className="text-xs text-slate-400 italic">
               Last saved: 2 minutes ago

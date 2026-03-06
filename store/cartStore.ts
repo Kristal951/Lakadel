@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CartStore, CartItem, CartItemPayload } from "./types";
+import type { CartStore, CartItem, CartItemPayload, SelectedColor } from "./types";
 import {
   cartGet,
   cartAdd,
@@ -8,6 +8,47 @@ import {
   cartClear,
   fetchProduct,
 } from "@/lib/cartApi";
+
+function normalizeSelectedColor(
+  value: string | SelectedColor | null | undefined,
+): SelectedColor | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "__DEFAULT__") return null;
+
+    try {
+      const parsed = JSON.parse(trimmed) as Partial<SelectedColor>;
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        typeof parsed.name === "string" &&
+        typeof parsed.hex === "string"
+      ) {
+        return {
+          name: parsed.name,
+          hex: parsed.hex,
+        };
+      }
+
+      return {
+        name: trimmed,
+        hex: trimmed.startsWith("#") ? trimmed : "",
+      };
+    } catch {
+      return {
+        name: trimmed,
+        hex: trimmed.startsWith("#") ? trimmed : "",
+      };
+    }
+  }
+
+  return {
+    name: typeof value.name === "string" ? value.name : "",
+    hex: typeof value.hex === "string" ? value.hex : "",
+  };
+}
 
 const sameColor = (
   a?: CartItem["selectedColor"],
@@ -20,7 +61,7 @@ const sameSize = (a?: string | null, b?: string | null) =>
 const toPayload = (item: Partial<CartItem>): CartItemPayload => ({
   productId: item.productId!,
   quantity: item.quantity ?? 1,
-  selectedColor: item.selectedColor?.hex ?? null,
+  selectedColor: item.selectedColor ?? null,
   selectedSize: item.selectedSize ?? null,
 });
 
@@ -52,9 +93,7 @@ const useCartStore = create<CartStore>()(
               return {
                 productId: payload.productId,
                 quantity: payload.quantity,
-                selectedColor: payload.selectedColor
-                  ? { hex: payload.selectedColor, name: "" }
-                  : undefined,
+                selectedColor: normalizeSelectedColor(payload.selectedColor),
                 selectedSize: payload.selectedSize ?? null,
                 product,
               };
@@ -68,6 +107,7 @@ const useCartStore = create<CartStore>()(
           set({ isSyncing: false });
         }
       },
+
       addToCart: async (item) => {
         set({ loading: true });
         if (!item.productId || (item.quantity ?? 1) <= 0) return;

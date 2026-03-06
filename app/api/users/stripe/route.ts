@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
+import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
+import { formatOrderNumber } from "@/lib/cartDB";
 
 export const runtime = "nodejs";
 
@@ -22,16 +25,14 @@ function getAppUrl() {
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => null)) as Body | null;
-    if (!body)
+    if (!body) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
 
     const { orderId, userId, guestId, email } = body;
 
     if (!orderId) {
-      return NextResponse.json(
-        { error: "orderId is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "orderId is required" }, { status: 400 });
     }
     if (!userId && !guestId) {
       return NextResponse.json(
@@ -50,18 +51,24 @@ export async function POST(req: Request) {
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        guestId: true,
+        status: true,
+        currency: true,
+        customerEmail: true,
+        paymentRef: true,
+        orderNumber: true, // ✅ you use this later
         orderItems: {
-          select: {
-            productId: true,
-            quantity: true,
-          },
+          select: { productId: true, quantity: true },
         },
       },
     });
 
-    if (!order)
+    if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
 
     if (userId && order.userId && order.userId !== userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -71,17 +78,11 @@ export async function POST(req: Request) {
     }
 
     if (order.status === "PAID") {
-      return NextResponse.json(
-        { error: "Order already paid" },
-        { status: 409 },
-      );
+      return NextResponse.json({ error: "Order already paid" }, { status: 409 });
     }
 
-    if (!order.orderItems?.length) {
-      return NextResponse.json(
-        { error: "Order has no items" },
-        { status: 400 },
-      );
+    if (!order.orderItems.length) {
+      return NextResponse.json({ error: "Order has no items" }, { status: 400 });
     }
 
     const currency = (order.currency || "NGN").toLowerCase();
@@ -97,9 +98,10 @@ export async function POST(req: Request) {
       const p = productMap.get(i.productId);
       if (!p) throw new Error("Product missing for an order item");
 
-      const unit_amount = Math.round(Number(p.price) * 100); // fallback to product price
-      if (!Number.isFinite(unit_amount) || unit_amount <= 0)
+      const unit_amount = Math.round(Number(p.price) * 100);
+      if (!Number.isFinite(unit_amount) || unit_amount <= 0) {
         throw new Error("Invalid unit price");
+      }
 
       return {
         price_data: {
@@ -117,20 +119,29 @@ export async function POST(req: Request) {
 
     const idempotencyKey = `checkout:${order.id}`;
 
+    // ✅ IMPORTANT: attach orderId to the PaymentIntent too (for payment_intent.succeeded)
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
         customer_email:
-          (email || order.customerEmail || "").trim().toLowerCase() ||
-          undefined,
+          (email || order.customerEmail || "").trim().toLowerCase() || undefined,
 
         line_items,
 
         client_reference_id: order.id,
+
         metadata: {
           orderId: order.id,
           userId: order.userId || "",
           guestId: order.guestId || "",
+        },
+
+        payment_intent_data: {
+          metadata: {
+            orderId: order.id,
+            userId: order.userId || "",
+            guestId: order.guestId || "",
+          },
         },
 
         success_url: `${appUrl}/checkout/success?provider=stripe&orderId=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
@@ -139,13 +150,31 @@ export async function POST(req: Request) {
       { idempotencyKey },
     );
 
+    const firstTimeInit = !order.paymentRef;
+    const orderRef = formatOrderNumber(order.orderNumber);
+
     await prisma.order.update({
       where: { id: order.id },
       data: {
         paymentMethod: "STRIPE",
         paymentRef: session.id,
+        status: "PENDING",
       },
     });
+
+    if (firstTimeInit && order.userId) {
+      const notif = getNotificationForStatus("PENDING", {
+        orderId: order.id,
+        orderRef,
+      });
+      if (notif) {
+        await notifyUserRealtime({
+          userId: order.userId,
+          ...notif,
+          link: `/orders/${order.id}`,
+        });
+      }
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (e: any) {

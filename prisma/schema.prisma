@@ -7,24 +7,25 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(uuid())
-  email           String?      @unique
+  id              String         @id @default(uuid())
+  email           String?        @unique
   name            String?
   password        String?
-  isGuest         Boolean      @default(false)
-  guestID         String?      @unique   // ✅ add @unique
-  authProvider    AuthProvider @default(EMAIL)
-  createdAt       DateTime     @default(now())
-  currency        String       @default("NGN")
+  isGuest         Boolean        @default(false)
+  guestID         String?        @unique
+  authProvider    AuthProvider   @default(EMAIL)
+  createdAt       DateTime       @default(now())
+  currency        String         @default("NGN")
   emailVerified   DateTime?
   image           String?
   phone           String?
   shippingAddress Json?
-  role            Role         @default(USER)
+  role            Role           @default(USER)
   accounts        Account[]
   cart            Cart?
   orders          Order[]
   sessions        Session[]
+  notifications   Notification[]
 
   @@index([guestID]) // optional but helpful
 }
@@ -77,13 +78,13 @@ model Product {
   images      String[]
   updatedAt   DateTime    @updatedAt
   colors      Json
-  totalStock  Int      @default(0)
+  totalStock  Int         @default(0)
   cartItems   CartItem[]
   orderItems  OrderItem[]
-  category  String?
-  status    String  @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
-  sku       String?  @unique
-  gender    String?
+  category    String?
+  status      String      @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
+  sku         String?     @unique
+  gender      String?
   shippingFee String?
 }
 
@@ -116,39 +117,63 @@ model CartItem {
 }
 
 model Order {
-  id              String      @id @default(uuid())
+  id              String         @id @default(uuid())
   userId          String?
   guestId         String?
-  customerName    String?   
+  customerName    String?
   total           Float
-  createdAt       DateTime    @default(now())
-  currency        String      @default("NGN")
+  createdAt       DateTime       @default(now())
+  currency        String         @default("NGN")
   paidAt          DateTime?
-  paymentRef      String?     @unique
-  status          OrderStatus @default(PENDING)
+  paymentRef      String?        @unique
+  status          OrderStatus    @default(PENDING)
   totalKobo       Int
   customerEmail   String
   customerPhone   String?
   shippingAddress Json?
-  user            User?       @relation(fields: [userId], references: [id])
+  user            User?          @relation(fields: [userId], references: [id])
   orderItems      OrderItem[]
-  shippingFee Int @default(0)
-  subTotal    Int @default(0)
-  paymentMethod    String?
+  shippingFee     Int            @default(0)
+  subTotal        Int            @default(0)
+  paymentMethod   String?
+  notifications   Notification[]
+  orderNumber     Int            @unique
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int     @default(1)
-  price     Float
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
-  selectedColor String?
+  id            String  @id @default(uuid())
+  orderId       String
+  productId     String
+  quantity      Int     @default(1)
+  price         Float
+  order         Order   @relation(fields: [orderId], references: [id])
+  product       Product @relation(fields: [productId], references: [id])
+  selectedColor Json?
   selectedSize  String?
-  unitPriceKobo Int @default(0)     
-  lineTotalKobo Int @default(0)     
+  unitPriceKobo Int     @default(0)
+  lineTotalKobo Int     @default(0)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  action    String?
+  link      String?
+  status    OrderStatus      @default(PENDING)
+  orderId   String?
+  order     Order?           @relation(fields: [orderId], references: [id])
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, type, createdAt])
+  @@index([userId, createdAt])
+  @@index([orderId])
 }
 
 enum OrderStatus {
@@ -158,6 +183,17 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   REFUNDED
+  CANCELLED
+}
+
+enum NotificationType {
+  ORDER
+  PAYMENT
+  PROMOTION
+  INFO
+  PRICE
+  WISHLIST
+  CART
 }
 
 enum AuthProvider {

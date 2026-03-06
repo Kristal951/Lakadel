@@ -261,7 +261,7 @@ export default function SuccessClient() {
 
               <div className="grid grid-cols-2 gap-3 mt-1">
                 <Link
-                  href="/dashboard/orders"
+                  href="/orders"
                   className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-foreground/5 hover:bg-foreground/10 text-foreground text-sm font-bold transition-all"
                 >
                   <ShoppingBag className="w-4 h-4" /> Order History

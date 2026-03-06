@@ -1,6 +1,7 @@
 import { useExchangeRateStore } from "@/store/exchangeRate";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { prisma } from "./prisma";
 
 export const countries = [
   { code: "NG", name: "Nigeria", currency: "NGN", symbol: "₦" },
@@ -17,9 +18,6 @@ export const countries = [
   { code: "BR", name: "Brazil", currency: "BRL", symbol: "R$" },
 ];
 
-/**
- * Basic NGN Formatter for internal use
- */
 export function formatNGN(amount: number) {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -97,27 +95,32 @@ async function compressImage(file: File, maxW = 1600, quality = 0.75) {
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("Compression failed"))),
       "image/jpeg",
-      quality
+      quality,
     );
   });
 
-  return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+  return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), {
+    type: "image/jpeg",
+  });
 }
 
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, idx: number) => Promise<R>
+  fn: (item: T, idx: number) => Promise<R>,
 ) {
   const results: R[] = new Array(items.length);
   let i = 0;
 
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (i < items.length) {
-      const idx = i++;
-      results[idx] = await fn(items[idx], idx);
-    }
-  });
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    async () => {
+      while (i < items.length) {
+        const idx = i++;
+        results[idx] = await fn(items[idx], idx);
+      }
+    },
+  );
 
   await Promise.all(workers);
   return results;
@@ -126,13 +129,16 @@ async function mapWithConcurrency<T, R>(
 export async function uploadImagesToCloudinary(files: File[]) {
   // compress all first (fast uploads)
   const compressed = await Promise.all(
-    files.map((f) => compressImage(f, 1600, 0.75))
+    files.map((f) => compressImage(f, 1600, 0.75)),
   );
 
-  const sigRes = await fetch("/api/admin/cloudinary/signature", { method: "POST" });
+  const sigRes = await fetch("/api/admin/cloudinary/signature", {
+    method: "POST",
+  });
   if (!sigRes.ok) throw new Error("Failed to get upload signature");
 
-  const { timestamp, signature, cloudName, apiKey, folder } = await sigRes.json();
+  const { timestamp, signature, cloudName, apiKey, folder } =
+    await sigRes.json();
 
   // upload 2 at a time (best for 5 photos)
   const urls = await mapWithConcurrency(compressed, 2, async (file) => {
@@ -149,13 +155,12 @@ export async function uploadImagesToCloudinary(files: File[]) {
 
     const uploadRes = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      { method: "POST", body: fd }
+      { method: "POST", body: fd },
     );
 
     const data = await uploadRes.json();
     if (!uploadRes.ok) throw new Error(data?.error?.message || "Upload failed");
 
-    // return smaller eager URL (loads super fast in shop)
     return (data?.eager?.[0]?.secure_url ?? data.secure_url) as string;
   });
 
@@ -165,4 +170,45 @@ export function cld(url: string, w = 800) {
   if (!url?.includes("/upload/")) return url;
 
   return url.replace("/upload/", `/upload/f_auto,q_auto,w_${w},c_fill/`);
+}
+
+export function parseOrderRef(orderRef?: string) {
+  if (!orderRef) return null;
+
+  const cleaned = orderRef.toUpperCase().replace("LDK-", "");
+  const num = Number(cleaned);
+
+  if (!Number.isInteger(num) || num <= 0) return null;
+  return num; 
+}
+
+export function parseSelectedColor(
+  value: unknown
+): { name?: string; hex?: string } | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object") {
+        return {
+          name: typeof parsed.name === "string" ? parsed.name : undefined,
+          hex: typeof parsed.hex === "string" ? parsed.hex : undefined,
+        };
+      }
+      return { name: value };
+    } catch {
+      return { name: value };
+    }
+  }
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    return {
+      name: typeof obj.name === "string" ? obj.name : undefined,
+      hex: typeof obj.hex === "string" ? obj.hex : undefined,
+    };
+  }
+
+  return null;
 }

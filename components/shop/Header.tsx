@@ -11,19 +11,36 @@ import ProfileMenu from "../ui/ProfileMenu";
 import useCartStore from "@/store/cartStore";
 import { useSession } from "next-auth/react";
 import Spinner from "../ui/spinner";
+import { Bell } from "lucide-react";
+import { useNotificationStore } from "@/store/notificationsStore";
+import NotificationDropdown from "./NotificationsDropDown";
 
 const Header = () => {
   const router = useRouter();
 
   const { items, isSyncing } = useCartStore();
   const { query, setQuery } = useProductStore();
+  const { notifications, unreadCount } = useNotificationStore();
 
   const { data: session } = useSession();
   const user = session?.user as any;
 
   const [localQuery, setLocalQuery] = useState(query);
   const [open, setOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node))
+        setOpen(false);
+      if (notifRef.current && !notifRef.current.contains(event.target as Node))
+        setNotifOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const goToBag = () => router.push("/shopping-bag");
 
@@ -61,11 +78,29 @@ const Header = () => {
           />
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 border-l border-foreground/20 pl-4">
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={() => setNotifOpen(!notifOpen)}
+              className={`relative p-2 rounded-full transition-all ${
+                notifOpen
+                  ? "bg-foreground/10 text-foreground"
+                  : "text-foreground/70 hover:text-foreground hover:bg-foreground/5"
+              }`}
+            >
+              <Bell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-background animate-pulse" />
+              )}
+            </button>
+
+            {notifOpen && <NotificationDropdown setOpen={setNotifOpen} />}
+          </div>
           <button
             onClick={goToBag}
             className="p-2 rounded-full relative cursor-pointer hover:bg-foreground/10 transition-colors"
             aria-label="View Cart"
+            disabled={isSyncing}
           >
             {cartCount > 0 && !isSyncing && (
               <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-[10px] font-bold text-background bg-foreground rounded-full">

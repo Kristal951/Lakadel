@@ -11,7 +11,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const email = "kristaldev001@gmail.com"; 
+  const email = "lakadel.lkdl@gmail.com"; 
   const user = await prisma.user.update({
     where: { email },
     data: { role: "ADMIN" },

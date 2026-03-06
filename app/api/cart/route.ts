@@ -2,45 +2,80 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
-import type { CartItemPayload } from "@/store/types";
+import type { CartItemPayload, SelectedColor } from "@/store/types";
 import { getGuestId, ensureGuestId } from "@/lib/guest";
 
-export const runtime = "nodejs"; // Prisma needs node runtime
+export const runtime = "nodejs";
 
 const DEFAULT_VARIANT = "__DEFAULT__";
-const norm = (v?: string | null) => (v && v.trim() ? v.trim() : DEFAULT_VARIANT);
 
-type CartOwner = { userId: string; guestId?: never } | { guestId: string; userId?: never };
+const norm = (v?: string | null) =>
+  v && v.trim() ? v.trim() : DEFAULT_VARIANT;
 
-// Read session userId if present
+function normalizeSelectedColorKey(
+  value: string | SelectedColor | null | undefined,
+): string {
+  if (!value) return DEFAULT_VARIANT;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return DEFAULT_VARIANT;
+
+    try {
+      const parsed = JSON.parse(trimmed) as Partial<SelectedColor>;
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        typeof parsed.name === "string" &&
+        typeof parsed.hex === "string"
+      ) {
+        return JSON.stringify({
+          name: parsed.name.trim(),
+          hex: parsed.hex.trim(),
+        });
+      }
+    } catch {}
+
+    return trimmed;
+  }
+
+  return JSON.stringify({
+    name: typeof value.name === "string" ? value.name.trim() : "",
+    hex: typeof value.hex === "string" ? value.hex.trim() : "",
+  });
+}
+
+type CartOwner =
+  | { userId: string; guestId?: never }
+  | { guestId: string; userId?: never };
+
 async function getUserId() {
   const session = await getServerSession(authOptions);
   return session?.user?.id ?? null;
 }
 
-// For GET: do NOT create guestId
 async function getCartOwnerForRead(): Promise<CartOwner | null> {
   const userId = await getUserId();
   if (userId) return { userId };
 
-  const guestId = await getGuestId(); // ✅ no ensure
+  const guestId = await getGuestId();
   if (!guestId) return null;
 
   return { guestId };
 }
 
-// For POST/PUT/DELETE: create guestId ONLY if needed
 async function getCartOwnerForWrite(): Promise<CartOwner> {
   const userId = await getUserId();
   if (userId) return { userId };
 
-  const guestId = await ensureGuestId(); // ✅ creates only on write
+  const guestId = await ensureGuestId();
   return { guestId };
 }
 
 async function fetchCartItems(owner: CartOwner) {
   const cart = await prisma.cart.findUnique({
-    where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
+    where:
+      "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
     include: {
       items: {
         orderBy: { id: "desc" },
@@ -59,13 +94,16 @@ function isPrismaRecordNotFound(err: any) {
 export async function GET() {
   try {
     const owner = await getCartOwnerForRead();
-    if (!owner) return NextResponse.json({ items: [] }); // ✅ guests with no cookie: empty cart
+    if (!owner) return NextResponse.json({ items: [] });
 
     const items = await fetchCartItems(owner);
     return NextResponse.json({ items });
   } catch (error) {
     console.error("GET /api/cart error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -81,7 +119,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!body.productId) {
-      return NextResponse.json({ error: "productId is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "productId is required" },
+        { status: 400 },
+      );
     }
 
     const qtyToAdd = Number(body.quantity ?? 1);
@@ -92,18 +133,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const selectedColor = norm(body.selectedColor);
+    const selectedColor = normalizeSelectedColorKey(body.selectedColor);
     const selectedSize = norm(body.selectedSize);
 
-    // Ensure cart exists for user OR guest
     const cart = await prisma.cart.upsert({
-      where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
+      where:
+        "userId" in owner
+          ? { userId: owner.userId }
+          : { guestId: owner.guestId },
       update: {},
-      create: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
+      create:
+        "userId" in owner
+          ? { userId: owner.userId }
+          : { guestId: owner.guestId },
       select: { id: true },
     });
 
-    // Upsert item by unique composite key
     await prisma.cartItem.upsert({
       where: {
         cartId_productId_selectedColor_selectedSize: {
@@ -143,7 +188,10 @@ export async function PUT(request: NextRequest) {
     }
 
     if (!productId) {
-      return NextResponse.json({ error: "productId is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "productId is required" },
+        { status: 400 },
+      );
     }
 
     const qtyDelta = Number(body.quantity ?? 1);
@@ -155,12 +203,16 @@ export async function PUT(request: NextRequest) {
     }
 
     const cart = await prisma.cart.findUnique({
-      where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
+      where:
+        "userId" in owner
+          ? { userId: owner.userId }
+          : { guestId: owner.guestId },
       select: { id: true },
     });
-    if (!cart) return NextResponse.json({ error: "Cart not found" }, { status: 404 });
+    if (!cart)
+      return NextResponse.json({ error: "Cart not found" }, { status: 404 });
 
-    const selectedColor = norm(body.selectedColor);
+    const selectedColor = normalizeSelectedColorKey(body.selectedColor);
     const selectedSize = norm(body.selectedSize);
 
     const key = {
@@ -178,7 +230,10 @@ export async function PUT(request: NextRequest) {
         });
       } catch (err: any) {
         if (isPrismaRecordNotFound(err)) {
-          return NextResponse.json({ error: "Item not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "Item not found" },
+            { status: 404 },
+          );
         }
         throw err;
       }
@@ -194,7 +249,10 @@ export async function PUT(request: NextRequest) {
         });
       } catch (err: any) {
         if (isPrismaRecordNotFound(err)) {
-          return NextResponse.json({ error: "Item not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "Item not found" },
+            { status: 404 },
+          );
         }
         throw err;
       }
@@ -232,14 +290,20 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Item not found" }, { status: 404 });
       }
       console.error("PUT /api/cart decrease error:", err);
-      return NextResponse.json({ error: "Failed to update cart" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to update cart" },
+        { status: 500 },
+      );
     }
 
     const items = await fetchCartItems(owner);
     return NextResponse.json({ success: true, items });
   } catch (error: any) {
     console.error("PUT /api/cart error:", error);
-    return NextResponse.json({ error: "Failed to update cart" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update cart" },
+      { status: 500 },
+    );
   }
 }
 
@@ -260,7 +324,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     const cart = await prisma.cart.findUnique({
-      where: "userId" in owner ? { userId: owner.userId } : { guestId: owner.guestId },
+      where:
+        "userId" in owner
+          ? { userId: owner.userId }
+          : { guestId: owner.guestId },
       select: { id: true },
     });
 
@@ -271,6 +338,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true, items: [] });
   } catch (error) {
     console.error("DELETE /api/cart error:", error);
-    return NextResponse.json({ error: "Failed to clear cart" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to clear cart" },
+      { status: 500 },
+    );
   }
 }

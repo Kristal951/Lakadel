@@ -1,7 +1,7 @@
 // app/admin/orders/[id]/page.tsx
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { StatusBadge } from "@/components/admin/DashboardWidgets";
 import {
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { authOptions } from "@/lib/authOptions";
 import Image from "next/image";
+import { parseSelectedColor } from "@/lib";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -62,7 +63,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
       customerEmail: true,
       customerPhone: true,
 
-      shippingAddress: true, 
+      shippingAddress: true,
 
       user: {
         select: {
@@ -173,7 +174,8 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
               const unitPrice = koboToNaira(item.unitPriceKobo ?? 0);
               const lineTotal = koboToNaira(item.lineTotalKobo ?? 0);
 
-              const image = product?.images?.[0] ?? "/placeholder.png"; // fallback image
+              const image = product?.images?.[0] ?? "/placeholder.png";
+              const c = parseSelectedColor(item.selectedColor);
 
               return (
                 <div
@@ -213,9 +215,22 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                         )}
 
                         {item.selectedColor && (
-                          <span className="rounded-full border border-foreground/10 px-2 py-1">
-                            Color: {item.selectedColor}
-                          </span>
+                          <div className="text-xs text-foreground/60">
+                            Color:{" "}
+                            {c ? (
+                              <span className="inline-flex items-center gap-2">
+                                {c.hex ? (
+                                  <span
+                                    className="w-3 h-3 rounded-full border"
+                                    style={{ backgroundColor: c.hex }}
+                                  />
+                                ) : null}
+                                <span>{c.name || c.hex || "Selected"}</span>
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </div>
                         )}
 
                         <span className="rounded-full border border-foreground/10 px-2 py-1">
@@ -247,9 +262,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Right column */}
         <aside className="space-y-6">
-          {/* Summary */}
           <section className="rounded-4xl border border-foreground/10 bg-background overflow-hidden">
             <div className="px-8 py-6 border-b border-foreground/5 bg-foreground/2">
               <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/40">

@@ -10,6 +10,7 @@ import {
 import clsx from "clsx";
 import { StatCard, StatusBadge } from "@/components/admin/DashboardWidgets";
 import { StatCardTwo } from "@/components/admin/StatCardTwo";
+import { formatOrderNumber } from "@/lib/cartDB";
 
 export default async function AdminDashboardPage() {
   const now = new Date();
@@ -112,7 +113,6 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      {/* Recent Orders Section */}
       <section className="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export default async function AdminDashboardPage() {
             <thead>
               <tr className="bg-slate-50/50 text-left border-b border-slate-100">
                 <th className="px-6 py-4 text-[11px] font-bold text-foreground/70 uppercase tracking-wider">
-                  Order ID
+                  Order Ref
                 </th>
                 <th className="px-6 py-4 text-[11px] font-bold text-foreground/70 uppercase tracking-wider">
                   Customer
@@ -153,6 +153,7 @@ export default async function AdminDashboardPage() {
 
             <tbody className="divide-y divide-slate-100">
               {recentOrders.map((o: any) => {
+                console.log(o)
                 const itemsCount = o.orderItems.reduce(
                   (sum: number, it: any) => sum + it.quantity,
                   0,
@@ -165,7 +166,7 @@ export default async function AdminDashboardPage() {
                   >
                     <td className="px-6 py-4">
                       <span className="font-mono w-[40%] text-xs font-semibold truncate text-foreground bg-background border border-foreground/20 px-2 py-1 rounded-md uppercase">
-                        #{o.id.slice(0, 5)}
+                        #{formatOrderNumber(o.orderNumber)}
                       </span>
                     </td>
 

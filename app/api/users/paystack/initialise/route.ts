@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { paystackInitialize } from "@/lib/paystack";
+import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
+import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
+import { Body } from "@/store/types";
+import { formatOrderNumber } from "@/lib/cartDB";
 
 export const runtime = "nodejs";
-
-type Body = {
-  orderId: string;
-  userId?: string | null;
-  guestId?: string | null;
-};
 
 function getBaseUrl() {
   const base =
@@ -51,6 +49,8 @@ export async function POST(req: Request) {
         totalKobo: true,
         userId: true,
         guestId: true,
+        paymentRef: true,
+        orderNumber: true,
       },
     });
 
@@ -59,7 +59,10 @@ export async function POST(req: Request) {
     }
 
     if (order.status === "PAID") {
-      return NextResponse.json({ error: "Order already paid" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Order already paid" },
+        { status: 409 },
+      );
     }
 
     if (userId && order.userId && order.userId !== userId) {
@@ -77,19 +80,41 @@ export async function POST(req: Request) {
     });
 
     const reference = init?.data?.reference as string | undefined;
-    const authorization_url = init?.data?.authorization_url as string | undefined;
+    const authorization_url = init?.data?.authorization_url as
+      | string
+      | undefined;
 
     if (!reference || !authorization_url) {
       throw new Error("Paystack initialize did not return reference/url");
     }
 
+    const firstTimeInit = !order.paymentRef;
+
     await prisma.order.update({
       where: { id: order.id },
       data: {
+        status: "PENDING",
         paymentRef: reference,
         paymentMethod: "PAYSTACK",
       },
     });
+
+    if (firstTimeInit && order.userId) {
+      const orderRef = formatOrderNumber(order.orderNumber);
+
+      const notif = getNotificationForStatus("PENDING", {
+        orderId: order.id,
+        orderRef,
+      });
+      if (notif) {
+        await notifyUserRealtime({
+          userId: order.userId,
+          ...notif,
+          orderId: order.id,
+          link: `/orders/${formatOrderNumber(order.orderNumber)}`,
+        });
+      }
+    }
 
     return NextResponse.json({ authorization_url, reference });
   } catch (e: any) {
