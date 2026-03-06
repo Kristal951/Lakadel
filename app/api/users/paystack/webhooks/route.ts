@@ -1,9 +1,16 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
+<<<<<<< HEAD
 import { prisma } from "@/lib/prisma";
 import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
 import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
 import { clearCartForPayer, formatOrderNumber } from "@/lib/cartDB";
+=======
+import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
+import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
+import { prisma } from "@/lib/prisma";
+
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 
 export const runtime = "nodejs";
 
@@ -49,6 +56,7 @@ export async function POST(req: Request) {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
+<<<<<<< HEAD
     select: {
       id: true,
       userId: true,
@@ -57,11 +65,15 @@ export async function POST(req: Request) {
       totalKobo: true,
       orderNumber: true,
     },
+=======
+    select: { id: true, userId: true, status: true, totalKobo: true },
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
   });
 
   if (!order) return NextResponse.json({ ok: true });
 
   if (order.totalKobo !== amountKobo) {
+<<<<<<< HEAD
     const updatedFailed = await prisma.order.updateMany({
       where: { id: orderId, status: { notIn: ["PAID", "FAILED"] } },
       data: {
@@ -84,12 +96,29 @@ export async function POST(req: Request) {
           ...notif,
           link: `/orders/${order.id}`,
         });
+=======
+    if (order.status !== "FAILED") {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: "FAILED" },
+      });
+
+      if (order.userId) {
+        const notif = getNotificationForStatus("FAILED", order.id);
+        if (notif) {
+          await notifyUserRealtime({
+            userId: order.userId,
+            ...notif,
+            link: `/orders/${order.id}`,
+          });
+        }
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
       }
     }
-
     return NextResponse.json({ ok: true });
   }
 
+<<<<<<< HEAD
   const didPay = await prisma.$transaction(async (tx) => {
     const updatedPaid = await tx.order.updateMany({
       where: { id: orderId, status: { not: "PAID" } },
@@ -97,10 +126,19 @@ export async function POST(req: Request) {
         status: "PAID",
         paidAt: new Date(),
         paymentMethod: "PAYSTACK",
+=======
+  if (order.status !== "PAID") {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
         paymentRef: reference,
       },
     });
 
+<<<<<<< HEAD
     if (updatedPaid.count === 0) return false;
 
     await clearCartForPayer({
@@ -127,6 +165,17 @@ export async function POST(req: Request) {
         ...notif,
         link: `/orders/${formatOrderNumber(order.orderNumber)}`,
       });
+=======
+    if (order.userId) {
+      const notif = getNotificationForStatus("PAID", order.id);
+      if (notif) {
+        await notifyUserRealtime({
+          userId: order.userId,
+          ...notif,
+          link: `/orders/${order.id}`,
+        });
+      }
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
     }
   }
 

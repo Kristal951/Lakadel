@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { AppNotification, CreateNotificationInput } from "@/store/types";
+import { CreateNotificationInput } from "@/store/types";
 
 export async function notifyUserRealtime(input: CreateNotificationInput) {
   const n = await prisma.notification.create({

@@ -4,7 +4,10 @@ import { paystackInitialize } from "@/lib/paystack";
 import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
 import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
 import { Body } from "@/store/types";
+<<<<<<< HEAD
 import { formatOrderNumber } from "@/lib/cartDB";
+=======
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 
 export const runtime = "nodejs";
 
@@ -49,8 +52,12 @@ export async function POST(req: Request) {
         totalKobo: true,
         userId: true,
         guestId: true,
+<<<<<<< HEAD
         paymentRef: true,
         orderNumber: true,
+=======
+        paymentRef: true, 
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
       },
     });
 
@@ -89,29 +96,46 @@ export async function POST(req: Request) {
     }
 
     const firstTimeInit = !order.paymentRef;
+<<<<<<< HEAD
+=======
+    console.log(firstTimeInit, 'firstTimeInit')
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 
     await prisma.order.update({
       where: { id: order.id },
       data: {
+<<<<<<< HEAD
         status: "PENDING",
+=======
+        status: "PENDING", 
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
         paymentRef: reference,
         paymentMethod: "PAYSTACK",
       },
     });
 
     if (firstTimeInit && order.userId) {
+<<<<<<< HEAD
       const orderRef = formatOrderNumber(order.orderNumber);
 
       const notif = getNotificationForStatus("PENDING", {
         orderId: order.id,
         orderRef,
       });
+=======
+      console.log(order.userId,'order.userID')
+      const notif = getNotificationForStatus("PENDING", order.id);
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
       if (notif) {
         await notifyUserRealtime({
           userId: order.userId,
           ...notif,
+<<<<<<< HEAD
           orderId: order.id,
           link: `/orders/${formatOrderNumber(order.orderNumber)}`,
+=======
+          link: `/orders/${order.id}`,
+>>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
         });
       }
     }
