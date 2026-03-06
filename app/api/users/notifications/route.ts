@@ -3,11 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 
-<<<<<<< HEAD
 export const runtime = "nodejs";
-=======
-export const runtime = "nodejs"; 
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -40,7 +36,6 @@ export async function GET(req: Request) {
         link: true,
         read: true,
         createdAt: true,
-<<<<<<< HEAD
         orderId: true,
         order: {
           select: {
@@ -51,8 +46,6 @@ export async function GET(req: Request) {
             },
           },
         },
-=======
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
       },
     }),
     prisma.notification.count({
@@ -61,7 +54,6 @@ export async function GET(req: Request) {
   ]);
 
   return NextResponse.json({
-<<<<<<< HEAD
     items: items.map((n: any) => ({
       ...n,
       createdAt: n.createdAt.toISOString(),
@@ -70,10 +62,3 @@ export async function GET(req: Request) {
     nextCursor: items.length ? items[items.length - 1].id : null,
   });
 }
-=======
-    items: items.map((n: any) => ({ ...n, createdAt: n.createdAt.toISOString() })),
-    unreadCount,
-    nextCursor: items.length ? items[items.length - 1].id : null,
-  });
-}
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
