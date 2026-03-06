@@ -41,7 +41,7 @@ export async function generateOrderNumber() {
   return next;
 }
 
-export function formatOrderNumber(orderNumber: number) {
+export function formatOrderNumber(orderNumber: number ) {
   return `LDK-${orderNumber.toString().padStart(6, "0")}`;
 }
 

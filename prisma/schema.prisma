@@ -133,17 +133,11 @@ model Order {
   shippingAddress Json?
   user            User?          @relation(fields: [userId], references: [id])
   orderItems      OrderItem[]
-<<<<<<< HEAD
   shippingFee     Int            @default(0)
   subTotal        Int            @default(0)
   paymentMethod   String?
   notifications   Notification[]
   orderNumber     Int            @unique
-=======
-  shippingFee     Int         @default(0)
-  subTotal        Int         @default(0)
-  paymentMethod   String?
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 }
 
 model OrderItem {
@@ -154,18 +148,13 @@ model OrderItem {
   price         Float
   order         Order   @relation(fields: [orderId], references: [id])
   product       Product @relation(fields: [productId], references: [id])
-<<<<<<< HEAD
   selectedColor Json?
-=======
-  selectedColor String?
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
   selectedSize  String?
   unitPriceKobo Int     @default(0)
   lineTotalKobo Int     @default(0)
 }
 
 model Notification {
-<<<<<<< HEAD
   id        String           @id @default(cuid())
   userId    String
   title     String
@@ -185,21 +174,6 @@ model Notification {
   @@index([userId, type, createdAt])
   @@index([userId, createdAt])
   @@index([orderId])
-=======
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String   @default("INFO")
-  action    String?
-  link      String?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, read, createdAt])
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 }
 
 enum OrderStatus {

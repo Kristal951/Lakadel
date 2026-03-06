@@ -2,7 +2,7 @@ import { OrderStatus, NotificationType } from "@prisma/client";
 
 export function getNotificationForStatus(
   status: OrderStatus,
-  input: { orderId: string; orderRef: string }
+  input: { orderId: string; orderRef: string },
 ) {
   const { orderId, orderRef } = input;
 
@@ -65,6 +65,16 @@ export function getNotificationForStatus(
         action: "ORDER_PLACED",
         orderId,
         status: OrderStatus.PENDING,
+      };
+
+    case OrderStatus.CANCELLED:
+      return {
+        title: "Order cancelled ❌",
+        message: `Your order #${orderRef} has been cancelled.`,
+        type: NotificationType.ORDER,
+        action: "ORDER_CANCELLED",
+        orderId,
+        status: OrderStatus.CANCELLED,
       };
 
     default:

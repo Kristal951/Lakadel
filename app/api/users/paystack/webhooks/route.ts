@@ -1,28 +1,73 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-<<<<<<< HEAD
 import { prisma } from "@/lib/prisma";
 import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
 import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
 import { clearCartForPayer, formatOrderNumber } from "@/lib/cartDB";
-=======
-import { notifyUserRealtime } from "@/lib/notifyUserRealtime";
-import { getNotificationForStatus } from "@/lib/getNotificationsForStatus";
-import { prisma } from "@/lib/prisma";
-
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 
 export const runtime = "nodejs";
 
 function isValidSignature(rawBody: string, signature: string | null) {
   if (!signature) return false;
 
+  const secret = process.env.PAYSTACK_SECRET_KEY;
+  if (!secret) return false;
+
   const hash = crypto
-    .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY!)
+    .createHmac("sha512", secret)
     .update(rawBody)
     .digest("hex");
 
   return hash === signature;
+}
+
+async function markOrderFailed(params: {
+  orderId: string;
+  reference?: string | null;
+  reason?: string;
+}) {
+  const { orderId, reference } = params;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      orderNumber: true,
+    },
+  });
+
+  if (!order) return;
+
+  const updated = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      status: { notIn: ["PAID", "FAILED", "CANCELLED", "DELIVERED"] },
+    },
+    data: {
+      status: "FAILED",
+      paymentMethod: "PAYSTACK",
+      paymentRef: reference ?? null,
+    },
+  });
+
+  if (updated.count > 0 && order.userId) {
+    const orderRef = formatOrderNumber(order.orderNumber);
+
+    const notif = getNotificationForStatus("FAILED", {
+      orderId: order.id,
+      orderRef,
+    });
+
+    if (notif) {
+      await notifyUserRealtime({
+        userId: order.userId,
+        ...notif,
+        link: `/orders/${order.id}`,
+      });
+    }
+  }
 }
 
 export async function POST(req: Request) {
@@ -40,23 +85,35 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (event?.event !== "charge.success") {
-    return NextResponse.json({ ok: true });
-  }
-
-  const data = event.data;
-
+  const data = event?.data;
   const orderId = data?.metadata?.orderId as string | undefined;
   const reference = data?.reference as string | undefined;
   const amountKobo = data?.amount as number | undefined;
 
-  if (!orderId || !reference || typeof amountKobo !== "number") {
+  if (!orderId) {
+    return NextResponse.json({ ok: true });
+  }
+
+  if (event?.event === "charge.failed") {
+    await markOrderFailed({
+      orderId,
+      reference,
+      reason: "Paystack charge failed",
+    });
+
+    return NextResponse.json({ ok: true });
+  }
+
+  if (event?.event !== "charge.success") {
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!reference || typeof amountKobo !== "number") {
     return NextResponse.json({ ok: true });
   }
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-<<<<<<< HEAD
     select: {
       id: true,
       userId: true,
@@ -65,80 +122,36 @@ export async function POST(req: Request) {
       totalKobo: true,
       orderNumber: true,
     },
-=======
-    select: { id: true, userId: true, status: true, totalKobo: true },
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
   });
 
   if (!order) return NextResponse.json({ ok: true });
 
+  // 3. Amount mismatch => fail order
   if (order.totalKobo !== amountKobo) {
-<<<<<<< HEAD
-    const updatedFailed = await prisma.order.updateMany({
-      where: { id: orderId, status: { notIn: ["PAID", "FAILED"] } },
-      data: {
-        status: "FAILED",
-        paymentMethod: "PAYSTACK",
-        paymentRef: reference,
-      },
+    await markOrderFailed({
+      orderId,
+      reference,
+      reason: "Amount mismatch",
     });
 
-    if (updatedFailed.count > 0 && order.userId) {
-      const orderRef = formatOrderNumber(order.orderNumber);
-
-      const notif = getNotificationForStatus("PENDING", {
-        orderId: order.id,
-        orderRef,
-      });
-      if (notif) {
-        await notifyUserRealtime({
-          userId: order.userId,
-          ...notif,
-          link: `/orders/${order.id}`,
-        });
-=======
-    if (order.status !== "FAILED") {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { status: "FAILED" },
-      });
-
-      if (order.userId) {
-        const notif = getNotificationForStatus("FAILED", order.id);
-        if (notif) {
-          await notifyUserRealtime({
-            userId: order.userId,
-            ...notif,
-            link: `/orders/${order.id}`,
-          });
-        }
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
-      }
-    }
     return NextResponse.json({ ok: true });
   }
 
-<<<<<<< HEAD
+  // 4. Mark as paid once only
   const didPay = await prisma.$transaction(async (tx) => {
     const updatedPaid = await tx.order.updateMany({
-      where: { id: orderId, status: { not: "PAID" } },
+      where: {
+        id: orderId,
+        status: { notIn: ["PAID", "CANCELLED", "DELIVERED"] },
+      },
       data: {
         status: "PAID",
         paidAt: new Date(),
         paymentMethod: "PAYSTACK",
-=======
-  if (order.status !== "PAID") {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "PAID",
-        paidAt: new Date(),
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
         paymentRef: reference,
       },
     });
 
-<<<<<<< HEAD
     if (updatedPaid.count === 0) return false;
 
     await clearCartForPayer({
@@ -159,23 +172,13 @@ export async function POST(req: Request) {
       orderId: order.id,
       orderRef,
     });
+
     if (notif) {
       await notifyUserRealtime({
         userId: order.userId,
         ...notif,
-        link: `/orders/${formatOrderNumber(order.orderNumber)}`,
+        link: `/orders/${order.id}`,
       });
-=======
-    if (order.userId) {
-      const notif = getNotificationForStatus("PAID", order.id);
-      if (notif) {
-        await notifyUserRealtime({
-          userId: order.userId,
-          ...notif,
-          link: `/orders/${order.id}`,
-        });
-      }
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
     }
   }
 
