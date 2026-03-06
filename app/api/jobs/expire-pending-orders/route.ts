@@ -19,8 +19,6 @@ async function expirePendingOrdersJob() {
   }
 
   const cutoff = new Date(Date.now() - expiryMinutes * 60 * 1000);
-
-  // Step 1: get candidates
   const candidates = await prisma.order.findMany({
     where: {
       status: "PENDING",
