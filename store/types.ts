@@ -178,7 +178,6 @@ export type State = { state_code?: string; name: string };
 export type AppNotification = {
   id: string;
   title: string;
-<<<<<<< HEAD
   userId: string;
   message: string;
   type: NotificationType;
@@ -188,14 +187,6 @@ export type AppNotification = {
   status: OrderStatus;
   createdAt: string;
   orderId?: string;
-=======
-  message: string;
-  type: string;
-  action?: string;
-  link?: string | null;
-  read: boolean;
-  createdAt: string;
->>>>>>> 8b38bdc11d52b30f7b87d401347bf1990c47fef1
 };
 
 export type Store = {
