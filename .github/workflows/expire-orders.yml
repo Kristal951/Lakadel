@@ -1,8 +1,9 @@
 name: Expire Pending Orders
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/10 * * * *"  
 
 jobs:
   run-job:

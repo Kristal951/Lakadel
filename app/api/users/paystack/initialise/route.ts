@@ -116,7 +116,7 @@ export async function POST(req: Request) {
           userId: order.userId,
           ...notif,
           orderId: order.id,
-          link: `/orders/${order.id}`,
+          link: `/orders/${order.orderNumber}`,
         });
       }
     }

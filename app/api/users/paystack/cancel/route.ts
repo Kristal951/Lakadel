@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         await notifyUserRealtime({
           userId: order.userId,
           ...notif,
-          link: `/orders/${order.id}`,
+          link: `/orders/${order.orderNumber}`,
         });
       }
     }

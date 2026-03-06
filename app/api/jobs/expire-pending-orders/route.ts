@@ -63,7 +63,6 @@ async function expirePendingOrdersJob() {
 
   let skippedCount = 0;
 
-  // Step 2: guarded per-order update
   for (const order of candidates) {
     const updated = await prisma.order.updateMany({
       where: {
@@ -103,7 +102,7 @@ async function expirePendingOrdersJob() {
       await notifyUserRealtime({
         userId: order.userId,
         ...notif,
-        link: `/orders/${order.id}`,
+        link: `/orders/${order.orderNumber}`,
       });
 
       return true;
