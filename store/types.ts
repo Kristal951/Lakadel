@@ -193,12 +193,14 @@ export type Store = {
   notifications: AppNotification[];
   unreadCount: number;
   hasFetched: boolean;
+  loading: boolean
 
   fetchNotifications: () => Promise<void>;
   push: (n: AppNotification) => void;
   markRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
   reset: () => void;
+  clearAllNotification: ()=>  Promise<void>
 };
 
 export type Body = {

@@ -29,7 +29,15 @@ interface NotificationDropdownProps {
 export default function NotificationDropdown({
   setOpen,
 }: NotificationDropdownProps) {
-  const { notifications, markRead, markAllRead } = useNotificationStore();
+  const {
+    notifications,
+    markRead,
+    markAllRead,
+    clearAllNotification,
+    loading,
+  } = useNotificationStore();
+  const { showToast } = useToast();
+
   const [tab, setTab] = useState<Tab>("ALL");
 
   const unreadCount = useMemo(
@@ -57,6 +65,14 @@ export default function NotificationDropdown({
   }, [notifications, tab]);
 
   const onClose = () => setOpen(false);
+  const handleClear = async () => {
+    try {
+      await clearAllNotification();
+      showToast("Notifications cleared", "success");
+    } catch {
+      showToast("Failed to clear notifications", "error");
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -182,11 +198,18 @@ export default function NotificationDropdown({
               </button>
 
               <button
-                // onClick={clearAll}
+                disabled={loading}
+                onClick={handleClear}
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl border border-foreground/15 text-foreground hover:bg-foreground/5 transition"
               >
-                <Trash2 className="w-4 h-4" />
-                Clear
+                {loading ? (
+                  <Spinner w="5" h="5" />
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <p> Clear All</p>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -224,6 +247,8 @@ function TabButton({
 }
 
 import Image from "next/image";
+import { useToast } from "@/hooks/useToast";
+import Spinner from "../ui/spinner";
 
 const NotificationItem = ({
   notification,
@@ -237,7 +262,13 @@ const NotificationItem = ({
   const isPayment = type === "PAYMENT";
   const isPromo = type === "PROMOTION";
 
-  const Icon = isOrder ? ShoppingBag : isPayment ? CreditCard : isPromo ? Tag : Info;
+  const Icon = isOrder
+    ? ShoppingBag
+    : isPayment
+      ? CreditCard
+      : isPromo
+        ? Tag
+        : Info;
 
   const badgeClass = isOrder
     ? "bg-purple-100 text-purple-600"

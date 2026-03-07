@@ -1,4 +1,4 @@
-// app/admin/orders/page.tsx
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {prisma} from "@/lib/prisma";
@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { authOptions } from "@/lib/authOptions";
 import { StatCardTwo } from "@/components/admin/StatCardTwo";
+import { formatOrderNumber } from "@/lib/cartDB";
 
 type SearchParams = {
   q?: string;
@@ -54,9 +55,7 @@ async function requireAdmin() {
   const session = await getServerSession(authOptions);
   const user = session?.user as any;
   if (!user?.id) redirect("/login");
-
-  // ✅ Replace with your real admin check:
-  // if (user.role !== "ADMIN") redirect("/");
+  if (user.role !== "ADMIN") redirect("/");
 
   return user;
 }
@@ -81,7 +80,6 @@ export default async function AdminOrdersPage({
   if (status) where.status = status;
 
   if (q) {
-    // ✅ Based on YOUR schema fields
     where.OR = [
       { id: { contains: q, mode: "insensitive" } },
       { paymentRef: { contains: q, mode: "insensitive" } },
@@ -119,6 +117,7 @@ export default async function AdminOrdersPage({
           paymentRef: true,
           customerName: true,
           customerEmail: true,
+          orderNumber: true
         },
       }),
 
@@ -190,7 +189,6 @@ export default async function AdminOrdersPage({
         </div>
       </header>
 
-      {/* Filters */}
       <div className="rounded-4xl border border-foreground/10 bg-background p-4 md:p-6">
         <form className="flex flex-col md:flex-row gap-3 md:items-center">
           <div className="flex-1 relative">
@@ -231,7 +229,6 @@ export default async function AdminOrdersPage({
         </form>
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCardTwo
           title="Total Revenue"
@@ -315,11 +312,8 @@ export default async function AdminOrdersPage({
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold text-foreground">
-                        #{o.id.slice(0, 8).toUpperCase()}
+                        #{formatOrderNumber(o.orderNumber)}
                       </span>
-                      {/* <span className="text-xs text-foreground/40 font-mono">
-                        {o.paymentRef ?? "—"}
-                      </span> */}
                     </div>
                   </td>
 

@@ -1,173 +1,389 @@
-// app/orders/page.tsx
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, ArrowRight, Search, FileText, Calendar, Truck } from "lucide-react";
+import {
+  ShoppingBag,
+  ArrowUpRight,
+  Search,
+  Hash,
+  Layers,
+  Clock,
+  ShieldCheck,
+  Box,
+  ChevronRight,
+} from "lucide-react";
 import { formatOrderNumber } from "@/lib/cartDB";
 import { OrderStatus } from "@prisma/client";
 
 const money = (kobo: number) =>
-  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(
-    kobo / 100,
-  );
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+  }).format(kobo / 100);
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Pending", color: "text-amber-600 bg-amber-50" },
-  PAID: { label: "Confirmed", color: "text-emerald-600 bg-emerald-50" },
-  SHIPPED: { label: "In Transit", color: "text-blue-600 bg-blue-50" },
-  DELIVERED: { label: "Delivered", color: "text-muted-foreground bg-secondary" },
-  FAILED: { label: "Declined", color: "text-red-600 bg-red-50" },
-};
-
-const TABS = [
-  { label: "All Activity", value: "" },
-  { label: "Processing", value: "PENDING" },
-  { label: "Confirmed", value: "PAID" },
+const tabs = [
+  { label: "All", value: "" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Paid", value: "PAID" },
   { label: "Shipped", value: "SHIPPED" },
   { label: "Delivered", value: "DELIVERED" },
 ];
 
-export default async function OrdersPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ status?: string }> 
+const statusTone: Record<string, { text: string; bg: string; dot: string }> = {
+  PENDING: {
+    text: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-500/10",
+    dot: "bg-amber-500",
+  },
+  PAID: {
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10",
+    dot: "bg-emerald-500",
+  },
+  SHIPPED: {
+    text: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-500/10",
+    dot: "bg-blue-500",
+  },
+  DELIVERED: {
+    text: "text-indigo-600 dark:text-blue-400",
+    bg: "bg-indigo-500/10",
+    dot: "bg-indigo-500",
+  },
+};
+
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
   const { status } = await searchParams;
-  const statusRaw = (status ?? "").toUpperCase();
+  const activeStatus = status?.toUpperCase() as OrderStatus | undefined;
+  const userId = session.user.id;
 
-const statusFilter: OrderStatus | undefined =
-  (Object.values(OrderStatus) as string[]).includes(statusRaw)
-    ? (statusRaw as OrderStatus)
-    : undefined;
+  const [
+    ordersBase,
+    totalOrders,
+    pendingCount,
+    paidCount,
+    shippedCount,
+    deliveredCount,
+    totalSpentAgg,
+  ] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        userId,
+        ...(activeStatus ? { status: activeStatus } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        orderNumber: true,
+        totalKobo: true,
+        status: true,
+        createdAt: true,
+      },
+      take: 20,
+    }),
+    prisma.order.count({ where: { userId } }),
+    prisma.order.count({ where: { userId, status: "PENDING" } }),
+    prisma.order.count({ where: { userId, status: "PAID" } }),
+    prisma.order.count({ where: { userId, status: "SHIPPED" } }),
+    prisma.order.count({ where: { userId, status: "DELIVERED" } }),
+    prisma.order.aggregate({
+      where: { userId },
+      _sum: { totalKobo: true },
+    }),
+  ]);
 
-  const orders = await prisma.order.findMany({
-    where: {
-      userId: session.user.id,
-      ...(statusFilter ? { status: statusFilter } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    include: { orderItems: { include: { product: true } } },
-  });
+  const orderIds = ordersBase.map((o) => o.id);
+
+  const orderItems = orderIds.length
+    ? await prisma.orderItem.findMany({
+        where: {
+          orderId: { in: orderIds },
+        },
+        select: {
+          id: true,
+          orderId: true,
+          quantity: true,
+          selectedSize: true,
+          selectedColor: true,
+          unitPriceKobo: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              images: true,
+            },
+          },
+        },
+      })
+    : [];
+
+  const orders = ordersBase.map((order) => ({
+    ...order,
+    orderItems: orderItems.filter((item) => item.orderId === order.id),
+  }));
+
+  const counts = {
+    all: totalOrders,
+    PENDING: pendingCount,
+    PAID: paidCount,
+    SHIPPED: shippedCount,
+    DELIVERED: deliveredCount,
+  };
+
+  const totalSpent = totalSpentAgg._sum.totalKobo ?? 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-6 py-12 lg:py-20">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-light tracking-tight italic">Orders</h1>
-            <p className="text-muted-foreground text-sm font-medium">
-              {orders.length} curated purchases {statusFilter && `• ${statusFilter.toLowerCase()}`}
+    <div className="min-h-screen bg-background text-foreground font-sans antialiased">
+      <div className="relative mx-auto max-w-7xl px-6 py-12 lg:py-20">
+        <div className="mb-14 flex flex-col gap-8 lg:mb-16 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+
+            <h1 className="text-5xl font-medium tracking-[-0.06em] sm:text-6xl">
+              Orders<span className="text-foreground/35">.</span>
+            </h1>
+
+            <p className="mt-4 max-w-xl text-sm leading-6 text-foreground/60">
+              Review your order history, track shipments, and inspect every
+              purchase from one clean archive.
             </p>
           </div>
-          
-          <div className="relative group w-full md:w-72">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
-            <input 
-              type="text" 
-              placeholder="Filter by ID..." 
-              className="w-full pl-11 pr-4 py-3 bg-secondary/40 border border-transparent rounded-2xl text-sm focus:bg-secondary/60 focus:ring-2 focus:ring-primary/5 outline-none transition-all"
+
+          <div className="group relative w-full sm:w-80">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 transition-colors group-focus-within:text-foreground"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search index..."
+              className="w-full rounded-2xl border border-foreground/10 bg-background pl-12 pr-4 py-4 text-sm outline-none transition-all placeholder:text-foreground/35 focus:border-foreground/25"
             />
           </div>
-        </header>
+        </div>
 
-        <nav className="flex flex-wrap gap-2 mb-16 p-1.5 bg-secondary/20 rounded-2xl w-fit">
-          {TABS.map((t) => {
-            const isActive = t.value === statusFilter;
+        <div className="mb-16 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-4xl border border-foreground/10 bg-background p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70">
+              Total Orders
+            </p>
+            <p className="mt-3 text-3xl font-medium tracking-tight">{counts.all}</p>
+          </div>
+
+          <div className="rounded-4xl border border-foreground/10 bg-background p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70">
+              Total Spent
+            </p>
+            <p className="mt-3 text-3xl font-medium tracking-tight">
+              {money(totalSpent)}
+            </p>
+          </div>
+
+          <div className="rounded-4xl border border-foreground/10 bg-background p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70">
+              Active Orders
+            </p>
+            <p className="mt-3 text-3xl font-medium tracking-tight">
+              {counts.PENDING + counts.PAID + counts.SHIPPED}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-16 grid grid-cols-2 gap-3 md:grid-cols-5">
+          {tabs.map((tab) => {
+            const isActive = tab.value === "" ? !activeStatus : activeStatus === tab.value;
+            const tabCount =
+              tab.value === ""
+                ? counts.all
+                : counts[tab.value as keyof typeof counts];
+
             return (
               <Link
-                key={t.label}
-                href={t.value ? `/orders?status=${t.value}` : "/orders"}
-                className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all ${
-                  isActive 
-                    ? "bg-background text-foreground shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                key={tab.label}
+                href={tab.value ? `/orders?status=${tab.value}` : "/orders"}
+                className={`group rounded-[1.75rem] border p-4 transition-all ${
+                  isActive
+                    ? "border-foreground/30 bg-foreground text-background"
+                    : "border-foreground/10 bg-background hover:border-foreground/25"
                 }`}
               >
-                {t.label}
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
+                    isActive
+                      ? "text-background/70"
+                      : "text-foreground/70 group-hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+
+                <div className="mt-6 flex items-end justify-between">
+                  <span className="text-2xl font-light tracking-tight">
+                    {String(tabCount).padStart(2, "0")}
+                  </span>
+                  <ChevronRight
+                    size={16}
+                    className={`transition-transform group-hover:translate-x-1 ${
+                      isActive ? "text-background/70" : "text-foreground/30"
+                    }`}
+                  />
+                </div>
               </Link>
             );
           })}
-        </nav>
+        </div>
 
-        {orders.length === 0 ? (
-          <div className="py-32 flex flex-col items-center justify-center border border-dashed rounded-[3rem] border-border bg-secondary/5">
-            <ShoppingBag className="text-muted-foreground/20 mb-4" size={40} />
-            <p className="text-muted-foreground font-light italic">No items found in this category.</p>
-          </div>
-        ) : (
-          <div className="grid gap-16">
+        {orders.length > 0 ? (
+          <div className="space-y-10">
             {orders.map((order) => {
-              const cfg = statusConfig[order.status] || statusConfig.PENDING;
-              
+              const tone = statusTone[order.status] ?? statusTone.PENDING;
+
               return (
-                <div key={order.id} className="grid lg:grid-cols-[1fr_320px] gap-10 items-start group">
-                  
-                  <div className="space-y-8">
-                    <div className="flex items-center gap-6 text-[11px] uppercase tracking-widest font-bold text-muted-foreground/60 border-b border-border/40 pb-4">
-                      <span className="flex items-center gap-2">
-                        <Calendar size={14} /> 
-                        {new Date(order.createdAt).toLocaleDateString()}
+                <div
+                  key={order.id}
+                  className="group grid overflow-hidden rounded-[2.5rem] border border-foreground/10 bg-background lg:grid-cols-[1fr_350px]"
+                >
+                  <div className="p-8 lg:p-10">
+                    <div className="mb-10 flex flex-wrap items-center gap-4 text-[11px] uppercase tracking-[0.16em] text-foreground/70">
+                      <span className="inline-flex items-center gap-2 rounded-xl bg-foreground/5 px-3 py-1.5 text-foreground/70">
+                        <Hash size={12} />
+                        {formatOrderNumber(order.orderNumber)}
                       </span>
-                      <span className="flex items-center gap-2">
-                        <FileText size={14} /> 
-                        REF: {order.id.slice(-8).toUpperCase()}
+
+                      <span className="inline-flex items-center gap-2">
+                        <Clock size={12} />
+                        {new Date(order.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+
+                      <span className="inline-flex items-center gap-2">
+                        <Layers size={12} />
+                        {order.orderItems.length} item
+                        {order.orderItems.length > 1 ? "s" : ""}
                       </span>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                       {order.orderItems.map((item: any) => (
-                        <div key={item.id} className="flex gap-6">
-                          <div className="relative w-20 h-24 rounded-2xl overflow-hidden bg-secondary/50 shrink-0">
-                            <Image 
-                              src={item.product?.images?.[0] || "/placeholder.png"} 
-                              alt="" 
-                              fill 
-                              className="object-cover" 
+                        <div
+                          key={item.id}
+                          className="flex gap-5 p-4 sm:gap-6 sm:p-5"
+                        >
+                          <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-3xl border border-foreground/8 bg-foreground/5 sm:h-36 sm:w-28">
+                            <Image
+                              src={item.product?.images?.[0] || "/placeholder.png"}
+                              alt={item.product?.name || "Product image"}
+                              fill
+                              className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                             />
                           </div>
-                          <div className="flex flex-col justify-center">
-                            <h4 className="text-lg font-light tracking-tight">{item.product?.name}</h4>
-                            <p className="text-xs text-muted-foreground mt-1">Quantity: {item.quantity}</p>
-                            <p className="text-sm font-semibold mt-2">{money(item.unitPriceKobo)}</p>
+
+                          <div className="flex min-w-0 flex-1 flex-col justify-center">
+                            <h3 className="line-clamp-2 text-xl font-medium tracking-tight sm:text-2xl">
+                              {item.product?.name}
+                            </h3>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-foreground/55">
+                              <span>Qty: {item.quantity}</span>
+                              {item.selectedSize && (
+                                <>
+                                  <span className="h-1 w-1 rounded-full bg-foreground/25" />
+                                  <span>Size: {item.selectedSize}</span>
+                                </>
+                              )}
+                            </div>
+
+                            <p className="mt-4 text-lg font-medium tracking-tight">
+                              {money(item.unitPriceKobo)}
+                            </p>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="bg-card border border-border/50 rounded-[2.5rem] p-8 space-y-8 shadow-sm transition-all group-hover:shadow-md">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Total Paid</p>
-                        <p className="text-3xl font-extralight tracking-tighter">{money(order.totalKobo)}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${cfg.color}`}>
-                        {cfg.label}
-                      </span>
-                    </div>
+                  <div className="flex flex-col justify-between border-t border-foreground/10 bg-foreground/3 p-8 lg:border-l lg:border-t-0 lg:p-10">
+                    <div className="space-y-7">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70">
+                            Statement Total
+                          </p>
+                          <p className="text-3xl font-medium tracking-tight sm:text-4xl">
+                            {money(order.totalKobo)}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center gap-3 py-4 border-y border-border/40 text-xs text-muted-foreground font-medium">
-                      <Truck size={16} />
-                      <span>Estimated Arrival: 2–3 Days</span>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-foreground/10 bg-background">
+                          <ShieldCheck size={18} className="text-foreground/70" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-2xl border border-foreground/10 bg-background px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <Box size={16} className="text-foreground/70" />
+                          <span className="text-xs font-medium text-foreground/70">
+                            Status
+                          </span>
+                        </div>
+
+                        <span
+                          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] ${tone.bg} ${tone.text}`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
 
                     <Link
                       href={`/orders/${formatOrderNumber(order.orderNumber)}`}
-                      className="flex items-center justify-between w-full p-4 bg-foreground text-background rounded-2xl text-[11px] font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
+                      className="group/btn mt-10 flex w-full items-center justify-between rounded-[1.75rem] bg-foreground px-6 py-5 text-[11px] font-bold uppercase tracking-[0.22em] text-background transition-all hover:opacity-90"
                     >
-                      Track Order
-                      <ArrowRight size={16} />
+                      Track Shipment
+                      <ArrowUpRight
+                        size={18}
+                        className="transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5"
+                      />
                     </Link>
                   </div>
                 </div>
               );
             })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-32 text-center">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-foreground/10 bg-foreground/4">
+              <ShoppingBag size={30} className="text-foreground/25" />
+            </div>
+
+            <h2 className="text-2xl font-medium tracking-tight">
+              The archive is vacant.
+            </h2>
+
+            <p className="mt-3 max-w-md text-sm leading-6 text-foreground/55">
+              No orders were found for this view yet.
+            </p>
+
+            <Link
+              href="/shop"
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-foreground/15 px-5 py-3 text-sm font-medium transition hover:bg-foreground hover:text-background"
+            >
+              Start Exploring
+              <ArrowUpRight size={16} />
+            </Link>
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ export const useNotificationStore = create<Store>((set, get) => ({
   notifications: [],
   unreadCount: 0,
   hasFetched: false,
+  loading: false,
 
   fetchNotifications: async () => {
     if (get().hasFetched) return;
@@ -56,6 +57,27 @@ export const useNotificationStore = create<Store>((set, get) => ({
     }));
   },
 
+  clearAllNotification: async () => {
+    set({loading: true})
+    try {
+      const res = await fetch("/api/users/notifications", {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to clear notifications");
+      }
+
+      set({
+        notifications: [],
+        unreadCount: 0,
+      });
+    } catch (error) {
+      console.error("Clear notifications error:", error);
+    }finally{
+       set({loading: false})
+    }
+  },
   reset: () =>
     set({
       notifications: [],

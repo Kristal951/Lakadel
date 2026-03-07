@@ -62,3 +62,31 @@ export async function GET(req: Request) {
     nextCursor: items.length ? items[items.length - 1].id : null,
   });
 }
+
+
+export async function DELETE(_req: Request) {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const deleted = await prisma.notification.deleteMany({
+      where: { userId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: deleted.count,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      { error: "Failed to delete notifications" },
+      { status: 500 }
+    );
+  }
+}

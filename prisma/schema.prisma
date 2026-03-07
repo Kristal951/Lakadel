@@ -138,6 +138,10 @@ model Order {
   paymentMethod   String?
   notifications   Notification[]
   orderNumber     Int            @unique
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
 }
 
 model OrderItem {

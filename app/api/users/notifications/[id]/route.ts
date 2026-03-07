@@ -17,10 +17,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params; 
+    const { id } = await params;
 
     if (!id) {
-      return NextResponse.json({ error: "Notification id required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Notification id required" },
+        { status: 400 },
+      );
     }
 
     const updated = await prisma.notification.updateMany({
@@ -29,7 +32,9 @@ export async function PATCH(
     });
 
     if (updated.count === 0) {
-      const exists = await prisma.notification.findFirst({ where: { id, userId } });
+      const exists = await prisma.notification.findFirst({
+        where: { id, userId },
+      });
       if (!exists) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }

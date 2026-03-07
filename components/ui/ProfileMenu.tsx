@@ -1,7 +1,7 @@
 "use client";
 
 import useUserStore from "@/store/userStore";
-import { Heart, Shield } from "lucide-react";
+import { Heart, Shield, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect } from "react";
 import { FiSettings, FiLogOut } from "react-icons/fi";
@@ -124,6 +124,20 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
             Wishlist
           </Link>
         </li>
+
+        <li>
+          <Link
+            href="/orders"
+            className={`flex items-center px-4 py-2.5 text-sm font-medium hover:bg-foreground/5 transition ${
+              !isAuthedUser ? "cursor-not-allowed opacity-50" : ""
+            }`}
+            onClick={(e) => guardLinkClick(e, "/orders")}
+          >
+            <ShoppingBag className="w-5 h-5 mr-2" />
+            Orders
+          </Link>
+        </li>
+
         {user.role === "ADMIN" && (
           <li>
             <Link
