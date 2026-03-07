@@ -127,7 +127,6 @@ async function mapWithConcurrency<T, R>(
 }
 
 export async function uploadImagesToCloudinary(files: File[]) {
-  // compress all first (fast uploads)
   const compressed = await Promise.all(
     files.map((f) => compressImage(f, 1600, 0.75)),
   );
@@ -140,7 +139,6 @@ export async function uploadImagesToCloudinary(files: File[]) {
   const { timestamp, signature, cloudName, apiKey, folder } =
     await sigRes.json();
 
-  // upload 2 at a time (best for 5 photos)
   const urls = await mapWithConcurrency(compressed, 2, async (file) => {
     const fd = new FormData();
     fd.append("file", file);
@@ -149,7 +147,6 @@ export async function uploadImagesToCloudinary(files: File[]) {
     fd.append("signature", signature);
     fd.append("folder", folder);
 
-    // create a fast “shop card” version immediately
     fd.append("eager", "w_600,f_auto,q_auto");
     fd.append("eager_async", "false");
 

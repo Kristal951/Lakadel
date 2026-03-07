@@ -60,7 +60,9 @@ export async function POST(req: Request) {
 
     if (!["PENDING", "FAILED"].includes(order.status)) {
       return NextResponse.json(
-        { error: `Cannot initialize payment for order with status ${order.status}` },
+        {
+          error: `Cannot initialize payment for order with status ${order.status}`,
+        },
         { status: 409 },
       );
     }
@@ -88,7 +90,9 @@ export async function POST(req: Request) {
     });
 
     const reference = init?.data?.reference as string | undefined;
-    const authorization_url = init?.data?.authorization_url as string | undefined;
+    const authorization_url = init?.data?.authorization_url as
+      | string
+      | undefined;
 
     if (!reference || !authorization_url) {
       throw new Error("Paystack initialize did not return reference/url");
@@ -103,7 +107,12 @@ export async function POST(req: Request) {
       },
     });
 
-    if (firstTimeInit && order.userId && order.orderNumber) {
+    const shouldNotifyPending =
+      order.userId &&
+      order.orderNumber &&
+      (firstTimeInit || (!firstTimeInit && order.status === "PENDING"));
+
+    if (shouldNotifyPending) {
       const orderRef = formatOrderNumber(order.orderNumber);
 
       const notif = getNotificationForStatus("PENDING", {
@@ -113,7 +122,7 @@ export async function POST(req: Request) {
 
       if (notif) {
         await notifyUserRealtime({
-          userId: order.userId,
+          userId: order.userId!,
           ...notif,
           orderId: order.id,
           link: `/orders/${order.orderNumber}`,

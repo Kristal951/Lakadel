@@ -310,8 +310,6 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const owner = await getCartOwnerForWrite();
-
-    // handle missing JSON body safely
     let body: { action?: string } = {};
     try {
       body = await request.json();
