@@ -4,9 +4,7 @@ import { Geist, Geist_Mono, Roboto, Lora } from "next/font/google";
 import "./globals.css";
 import Providers from "@/contexts/Providers";
 import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
   title: "Lakadel",

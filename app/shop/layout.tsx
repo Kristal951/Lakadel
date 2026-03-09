@@ -11,7 +11,6 @@ export default function ShopLayout({
     <div className="w-full flex flex-col min-h-screen">
       <div className="flex w-full flex-1">
         <Header />
-        {/* <TopBar /> */}
         <SidebarFilters />
         <main className="flex-1 md:ml-[20%] mt-22 md:p-4 p-0">{children}</main>
       </div>
