@@ -1,27 +1,69 @@
-// app/admin/page.tsx
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import {
- 
   ArrowUpRight,
   MoreHorizontal,
   Clock,
+  TrendingUp,
+  Package,
+  CheckCircle2,
 } from "lucide-react";
-import clsx from "clsx";
-import { StatCard, StatusBadge } from "@/components/admin/DashboardWidgets";
+import { StatusBadge } from "@/components/admin/DashboardWidgets";
 import { StatCardTwo } from "@/components/admin/StatCardTwo";
 import { formatOrderNumber } from "@/lib/cartDB";
+import { DashboardCharts } from "@/components/admin/DashboardCharts";
+
+function startOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function startOfWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const d = new Date(now);
+  d.setDate(now.getDate() - diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function startOfMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function formatMoney(amount: number, currency = "NGN") {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: currency === "NGN" ? 0 : 2,
+  }).format(amount);
+}
 
 export default async function AdminDashboardPage() {
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = startOfToday();
+  const week = startOfWeek();
+  const month = startOfMonth();
 
   const [
     recentOrders,
     ordersToday,
     pendingOrders,
+    paidOrders,
+    deliveredOrders,
+    failedOrders,
+    cancelledOrders,
     customersCount,
     revenueTodayAgg,
+    revenueWeekAgg,
+    revenueMonthAgg,
+    allOrdersCount,
+    avgOrderAgg,
+    revenueTrendRaw,
+    statusCountsRaw,
+    monthlyRevenueRaw,
+    topProductsRaw,
   ] = await Promise.all([
     prisma.order.findMany({
       take: 10,
@@ -32,11 +74,27 @@ export default async function AdminDashboardPage() {
     }),
 
     prisma.order.count({
-      where: { createdAt: { gte: startOfDay } },
+      where: { createdAt: { gte: today } },
     }),
 
     prisma.order.count({
       where: { status: "PENDING" },
+    }),
+
+    prisma.order.count({
+      where: { status: "PAID" },
+    }),
+
+    prisma.order.count({
+      where: { status: "DELIVERED" },
+    }),
+
+    prisma.order.count({
+      where: { status: "FAILED" },
+    }),
+
+    prisma.order.count({
+      where: { status: "CANCELLED" },
     }),
 
     prisma.user.count({
@@ -45,31 +103,170 @@ export default async function AdminDashboardPage() {
 
     prisma.order.aggregate({
       where: {
-        status: "PAID",
-        createdAt: { gte: startOfDay },
+        paidAt: { gte: today },
       },
-      _sum: { total: true },
+      _sum: { totalKobo: true },
+    }),
+
+    prisma.order.aggregate({
+      where: {
+        paidAt: { gte: week },
+      },
+      _sum: { totalKobo: true },
+    }),
+
+    prisma.order.aggregate({
+      where: {
+        paidAt: { gte: month },
+      },
+      _sum: { totalKobo: true },
+    }),
+
+    prisma.order.count(),
+
+    prisma.order.aggregate({
+      where: {
+        paidAt: { not: null },
+      },
+      _avg: { totalKobo: true },
+    }),
+
+    prisma.order.findMany({
+      where: {
+        paidAt: { not: null },
+      },
+      orderBy: { paidAt: "asc" },
+      select: {
+        paidAt: true,
+        totalKobo: true,
+      },
+    }),
+
+    prisma.order.groupBy({
+      by: ["status"],
+      _count: {
+        status: true,
+      },
+    }),
+
+    prisma.order.findMany({
+      where: {
+        paidAt: { not: null },
+      },
+      select: {
+        paidAt: true,
+        totalKobo: true,
+      },
+      orderBy: {
+        paidAt: "asc",
+      },
+    }),
+
+    prisma.orderItem.findMany({
+      select: {
+        quantity: true,
+        product: {
+          select: {
+            name: true,
+          },
+        },
+        order: {
+          select: {
+            paidAt: true,
+          },
+        },
+      },
     }),
   ]);
 
-  const revenueToday = Number(revenueTodayAgg._sum.total ?? 0);
+  const revenueToday = (revenueTodayAgg._sum.totalKobo ?? 0) / 100;
+  const revenueWeek = (revenueWeekAgg._sum.totalKobo ?? 0) / 100;
+  const revenueMonth = (revenueMonthAgg._sum.totalKobo ?? 0) / 100;
+  const averageOrderValue = (avgOrderAgg._avg.totalKobo ?? 0) / 100;
+
+  const last7Days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    const key = d.toISOString().slice(0, 10);
+
+    return {
+      key,
+      label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      revenue: 0,
+    };
+  });
+
+  for (const row of revenueTrendRaw) {
+    if (!row.paidAt) continue;
+    const key = new Date(row.paidAt).toISOString().slice(0, 10);
+    const found = last7Days.find((d) => d.key === key);
+    if (found) found.revenue += (row.totalKobo ?? 0) / 100;
+  }
+
+  const statusMap: Record<string, number> = {
+    PENDING: 0,
+    PAID: 0,
+    SHIPPED: 0,
+    DELIVERED: 0,
+    FAILED: 0,
+    CANCELLED: 0,
+    REFUNDED: 0,
+  };
+
+  for (const row of statusCountsRaw) {
+    statusMap[row.status] = row._count.status;
+  }
+
+  const statusChartData = Object.entries(statusMap).map(([status, value]) => ({
+    status,
+    value,
+  }));
+
+  const monthlyRevenueMap = new Map<string, number>();
+
+  for (const row of monthlyRevenueRaw) {
+    if (!row.paidAt) continue;
+
+    const date = new Date(row.paidAt);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    monthlyRevenueMap.set(
+      key,
+      (monthlyRevenueMap.get(key) ?? 0) + (row.totalKobo ?? 0) / 100,
+    );
+  }
+
+  const monthlyRevenueData = Array.from(monthlyRevenueMap.entries()).map(
+    ([key, revenue]) => {
+      const [year, month] = key.split("-");
+      const date = new Date(Number(year), Number(month) - 1, 1);
+
+      return {
+        key,
+        month: date.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        }),
+        revenue,
+      };
+    },
+  );
 
   return (
-    <div className="p-6 space-y-8 bg-slate-50/50 min-h-screen">
-      {/* Header */}
+    <div className="min-h-screen bg-background p-6 space-y-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Dashboard
           </h1>
-          <p className="text-foreground/70 ">
+          <p className="text-foreground/70">
             Welcome back. Here is what is happening today.
           </p>
         </div>
+
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-foreground/95 text-background rounded-xl hover:bg-foreground transition shadow-lg text-sm font-semibold"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-xl hover:opacity-90 transition text-sm font-semibold"
           >
             Manage Orders
             <ArrowUpRight className="w-4 h-4" />
@@ -77,51 +274,154 @@ export default async function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCardTwo
           title="Revenue Today"
-          value={`₦${revenueToday.toLocaleString()}`}
+          value={formatMoney(revenueToday)}
           iconKey="card"
-          trend="Today"
+          trend="Paid today"
           iconBg="bg-emerald-100"
           iconColor="text-emerald-700"
+        />
+        <StatCardTwo
+          title="Revenue This Week"
+          value={formatMoney(revenueWeek)}
+          iconKey="card"
+          trend="Paid this week"
+          iconBg="bg-green-100"
+          iconColor="text-green-700"
+        />
+        <StatCardTwo
+          title="Revenue This Month"
+          value={formatMoney(revenueMonth)}
+          iconKey="card"
+          trend="Paid this month"
+          iconBg="bg-lime-100"
+          iconColor="text-lime-700"
         />
         <StatCardTwo
           title="Orders Today"
           value={ordersToday.toString()}
           iconKey="shopBag"
-          trend="Today"
+          trend="Created today"
           iconBg="bg-purple-100"
           iconColor="text-purple-700"
         />
-        <StatCardTwo
-          title="Pending Orders"
-          value={pendingOrders.toString()}
-          iconKey="pending"
-          trend="Needs attention"
-          iconBg="bg-amber-100"
-          iconColor="text-amber-700"
-        />
-        <StatCardTwo
-          title="Customers"
-          value={customersCount.toString()}
-          iconKey="customers"
-          trend="Total"
-          iconBg="bg-blue-100"
-          iconColor="text-blue-700"
-        />
       </div>
 
-      <section className="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+      <DashboardCharts
+        revenueTrend={last7Days}
+        statusData={statusChartData}
+        monthlyRevenueData={monthlyRevenueData}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="rounded-3xl border border-foreground/10 bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <TrendingUp className="w-5 h-5 text-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">
+              Business Snapshot
+            </h2>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Total Orders</span>
+              <span className="font-semibold text-foreground">
+                {allOrdersCount}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Customers</span>
+              <span className="font-semibold text-foreground">
+                {customersCount}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Failed Orders</span>
+              <span className="font-semibold text-foreground">
+                {failedOrders}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Cancelled Orders</span>
+              <span className="font-semibold text-foreground">
+                {cancelledOrders}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Avg Order Value</span>
+              <span className="font-semibold text-foreground">
+                {formatMoney(averageOrderValue)}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-foreground/10 bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Package className="w-5 h-5 text-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">
+              Fulfilment
+            </h2>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Pending</span>
+              <span className="font-semibold text-foreground">
+                {pendingOrders}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Paid</span>
+              <span className="font-semibold text-foreground">
+                {paidOrders}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Delivered</span>
+              <span className="font-semibold text-foreground">
+                {deliveredOrders}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-foreground/10 bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <CheckCircle2 className="w-5 h-5 text-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">
+              Customer Base
+            </h2>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Registered Customers</span>
+              <span className="font-semibold text-foreground">
+                {customersCount}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/60">Recent Orders Shown</span>
+              <span className="font-semibold text-foreground">
+                {recentOrders.length}
+              </span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="bg-background rounded-3xl border border-foreground/10 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-foreground/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-foreground" />
             <h2 className="text-lg font-bold text-foreground">
               Recent Transactions
             </h2>
           </div>
-          <button className="text-slate-400 hover:text-slate-600">
+          <button className="text-foreground/40 hover:text-foreground/70">
             <MoreHorizontal className="w-5 h-5" />
           </button>
         </div>
@@ -129,7 +429,7 @@ export default async function AdminDashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50/50 text-left border-b border-slate-100">
+              <tr className="bg-foreground/3 text-left border-b border-foreground/10">
                 <th className="px-6 py-4 text-[11px] font-bold text-foreground/70 uppercase tracking-wider">
                   Order Ref
                 </th>
@@ -151,9 +451,8 @@ export default async function AdminDashboardPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-foreground/8">
               {recentOrders.map((o: any) => {
-                console.log(o)
                 const itemsCount = o.orderItems.reduce(
                   (sum: number, it: any) => sum + it.quantity,
                   0,
@@ -162,21 +461,18 @@ export default async function AdminDashboardPage() {
                 return (
                   <tr
                     key={o.id}
-                    className="group hover:bg-slate-50/80 transition-colors"
+                    className="group hover:bg-foreground/2 transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span className="font-mono w-[40%] text-xs font-semibold truncate text-foreground bg-background border border-foreground/20 px-2 py-1 rounded-md uppercase">
+                      <span className="font-mono text-xs font-semibold truncate text-foreground bg-background border border-foreground/20 px-2 py-1 rounded-md uppercase">
                         #{formatOrderNumber(o.orderNumber)}
                       </span>
                     </td>
 
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {/* <img src={} alt="" /> */}
-                        <span className="text-sm font-medium text-foreground">
-                          {o.customerEmail ?? "—"}
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium text-foreground">
+                        {o.customerEmail ?? "—"}
+                      </span>
                     </td>
 
                     <td className="px-6 py-4 text-center text-sm text-foreground">
@@ -185,12 +481,15 @@ export default async function AdminDashboardPage() {
 
                     <td className="px-6 py-4">
                       <span className="text-sm font-bold text-foreground">
-                        {Number(o.total).toLocaleString(undefined, {
-                          style: "currency",
-                          currency: o.currency || "NGN",
-                          maximumFractionDigits:
-                            (o.currency || "NGN") === "NGN" ? 0 : 2,
-                        })}
+                        {Number((o.totalKobo ?? 0) / 100).toLocaleString(
+                          undefined,
+                          {
+                            style: "currency",
+                            currency: o.currency || "NGN",
+                            maximumFractionDigits:
+                              (o.currency || "NGN") === "NGN" ? 0 : 2,
+                          },
+                        )}
                       </span>
                     </td>
 
@@ -213,7 +512,7 @@ export default async function AdminDashboardPage() {
           </table>
 
           {recentOrders.length === 0 && (
-            <div className="p-12 text-center text-slate-400 italic text-sm">
+            <div className="p-12 text-center text-foreground/40 italic text-sm">
               No recent transactions found.
             </div>
           )}

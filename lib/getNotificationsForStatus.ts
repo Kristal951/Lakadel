@@ -30,7 +30,7 @@ export function getNotificationForStatus(
     case OrderStatus.SHIPPED:
       return {
         title: "Order shipped 🚚",
-        message: `Order #${orderRef} is on the way.`,
+        message: `Your Order #${orderRef} is on the way.`,
         type: NotificationType.ORDER,
         action: "ORDER_SHIPPED",
         orderId,
@@ -40,7 +40,7 @@ export function getNotificationForStatus(
     case OrderStatus.DELIVERED:
       return {
         title: "Order delivered 📦",
-        message: `Order #${orderRef} has been delivered.`,
+        message: `Your Order #${orderRef} has been delivered.`,
         type: NotificationType.ORDER,
         action: "ORDER_DELIVERED",
         orderId,

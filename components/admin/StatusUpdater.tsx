@@ -112,16 +112,6 @@ export function StatusUpdater({
           "Update Status"
         )}
       </button>
-
-      <div className="rounded-2xl border border-foreground/10 bg-foreground/3 p-4 text-xs leading-6 text-foreground/55">
-        Allowed flow:
-        <div className="mt-2 font-medium text-foreground/75">
-          Pending → Paid → Shipped → Delivered
-        </div>
-        <div className="mt-1">
-          Failed can move to Paid if payment later succeeds.
-        </div>
-      </div>
     </div>
   );
 }

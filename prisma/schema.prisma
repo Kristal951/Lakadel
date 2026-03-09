@@ -68,24 +68,24 @@ model VerificationToken {
 }
 
 model Product {
-  id          String      @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   description String
   price       Int
   filters     String[]
   sizes       String[]
-  createdAt   DateTime    @default(now())
+  createdAt   DateTime      @default(now())
   images      String[]
-  updatedAt   DateTime    @updatedAt
+  updatedAt   DateTime      @updatedAt
   colors      Json
-  totalStock  Int         @default(0)
+  totalStock  Int           @default(0)
   cartItems   CartItem[]
   orderItems  OrderItem[]
   category    String?
-  status      String      @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
-  sku         String?     @unique
+  sku         String?       @unique
   gender      String?
   shippingFee String?
+  status      ProductStatus @default(ACTIVE)
 }
 
 model Cart {
@@ -208,4 +208,11 @@ enum AuthProvider {
 enum Role {
   USER
   ADMIN
+}
+
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+  DRAFT
 }

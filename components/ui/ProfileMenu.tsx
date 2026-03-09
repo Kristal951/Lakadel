@@ -138,7 +138,7 @@ export default function ProfileMenu({ setOpen, open }: ProfileMenuProps) {
           </Link>
         </li>
 
-        {user.role === "ADMIN" && (
+        {user?.role === "ADMIN" && (
           <li>
             <Link
               href="/admin"

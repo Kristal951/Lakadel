@@ -73,6 +73,9 @@ export interface ShippingAddress {
 export interface ProductState {
   products: Product[];
   loading: boolean;
+  deletingId: string | null;
+  archivingId: string | null;
+  restoringId: string | null;
   error: string | null;
   filters: {
     sizes: string[];
@@ -90,8 +93,12 @@ export interface ProductState {
   setFilter: (type: "sizes" | "categories", value: string[]) => void;
 
   fetchProducts: () => Promise<void>;
+  fetchProductsForAdmins: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
   filteredAndSearchedProducts: () => Product[];
+  deleteProduct: (id: string) => Promise<boolean>;
+  archiveProduct: (id: string) => Promise<boolean>;
+  restoreProduct: (id: string) => Promise<boolean>;
 }
 
 export interface User {
@@ -161,7 +168,7 @@ export interface ExchangeRateState {
 export type CartItemPayload = {
   productId: string;
   quantity: number;
- selectedColor?: { name: string; hex: string } | string | null;
+  selectedColor?: { name: string; hex: string } | string | null;
   selectedSize: string | null;
 };
 
@@ -193,14 +200,14 @@ export type Store = {
   notifications: AppNotification[];
   unreadCount: number;
   hasFetched: boolean;
-  loading: boolean
+  loading: boolean;
 
   fetchNotifications: () => Promise<void>;
   push: (n: AppNotification) => void;
   markRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
   reset: () => void;
-  clearAllNotification: ()=>  Promise<void>
+  clearAllNotification: () => Promise<void>;
 };
 
 export type Body = {
